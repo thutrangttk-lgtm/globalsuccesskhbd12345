@@ -9,6 +9,7 @@ import { LessonPlanEditor } from '../components/LessonPlanEditor';
 import { EmptyState } from '../components/EmptyState';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import type { CurriculumUnit, Lesson, LessonPlan } from '../types';
+import { useAuth } from '../context/AuthContext';
 import { generateStructuredLessonPlan } from '../utils/lessonGenerator';
 import { findTeacherChannelVideo } from '../utils/videoMatcher';
 

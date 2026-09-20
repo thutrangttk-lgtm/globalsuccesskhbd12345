@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { FilePenLine, Sparkles, ArrowLeft } from 'lucide-react';
 import { CustomLessonForm } from '../components/CustomLessonForm';
 import { LessonTextInput } from '../components/LessonTextInput';
@@ -10,12 +9,10 @@ import { LessonPlanEditor } from '../components/LessonPlanEditor';
 import type { ExtractedLessonInfo, LessonPlan } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
-
 import { generateStructuredLessonPlan } from '../utils/lessonGenerator';
 import { findTeacherChannelVideo } from '../utils/videoMatcher';
 
 export const CustomLessonPlanCreate: React.FC = () => {
-  const navigate = useNavigate();
   const { user, profile } = useAuth();
 
   const [activeTab, setActiveTab] = useState<'form' | 'paste' | 'image' | 'mixed'>('mixed');

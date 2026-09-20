@@ -15,7 +15,6 @@ export const EnhancedLessons: React.FC = () => {
   const [selectedGrade, setSelectedGrade] = useState<number>(3);
   const [lessonType, setLessonType] = useState('Speaking Practice');
   const [topic, setTopic] = useState('My Hobbies & Free Time');
-  const [duration, setDuration] = useState(35);
 
   const [vocabulary, setVocabulary] = useState('reading, singing, dancing, playing football');
   const [sentencePatterns, setSentencePatterns] = useState('What do you like doing? - I like reading.');

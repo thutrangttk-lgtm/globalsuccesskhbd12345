@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { LessonPlan, IntegrationItem } from '../types';
+import type { LessonPlan, IntegrationItem, ProcedureRow } from '../types';
 import { ProceduresTable } from './ProceduresTable';
 import { exportToWord } from '../utils/wordExport';
 import { Save, Eye, FileDown, Printer, CheckCircle, Plus, Trash2, Video, Lock, RotateCcw } from 'lucide-react';
@@ -82,7 +82,6 @@ export const LessonPlanEditor: React.FC<LessonPlanEditorProps> = ({
   };
 
   const handleAddCustomIntegration = () => {
-    const vocabText = (plan.vocabulary || []).join(', ') || 'target words';
     const mainPattern = (plan.sentence_patterns || [])[0] || 'target sentence pattern';
 
     const newInt: IntegrationItem = {

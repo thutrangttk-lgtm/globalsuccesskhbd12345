@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Database, FileText, CheckCircle2, Sparkles, RefreshCw, ShieldCheck, Plus, Trash2, Edit3, ArrowRight } from 'lucide-react';
+import { Database, FileText, CheckCircle2, Sparkles, RefreshCw, ShieldCheck, Plus, Trash2, Edit3 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { analyzeSourceFile, type ExtractedDocumentData, type ExtractedUnit, type ExtractedLesson, type ExtractedIntegration, registerSourceInDatabase } from '../utils/sourceDocumentExtractor';
 import { SkeletonLoader } from '../components/SkeletonLoader';
