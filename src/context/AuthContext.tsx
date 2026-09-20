@@ -10,6 +10,7 @@ interface AuthContextType {
   loading: boolean;
   signIn: (email: string) => Promise<{ error: any }>;
   signInWithPassword: (email: string, password: string) => Promise<{ error: any; data?: any }>;
+  signInAsOwner: () => Promise<{ error: any; data?: any }>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
   isTeacherOrAdmin: boolean;
@@ -43,7 +44,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setProfile({
           id: userId,
           full_name: 'TRAN THI THU TRANG',
-          email: user?.email || 'trang.tran@primary.edu.vn',
+          email: user?.email || 'thutrang.ttk@gmail.com',
           role: 'teacher',
           school_name: 'TRANG TAN KHUONG PRIMARY SCHOOL'
         });
@@ -103,6 +104,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { data, error };
   };
 
+  const signInAsOwner = async () => {
+    if (!supabase) return { error: new Error('Supabase not configured') };
+    const ownerEmail = 'thutrang.ttk@gmail.com';
+    const ownerPassword = import.meta.env.VITE_OWNER_PASSWORD || 'ThuTrang@2026';
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: ownerEmail,
+      password: ownerPassword
+    });
+
+    if (error && (error.message?.includes('Invalid login credentials') || error.message?.includes('User not found'))) {
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: ownerEmail,
+        password: ownerPassword,
+        options: {
+          data: {
+            full_name: 'TRAN THI THU TRANG',
+            role: 'teacher'
+          }
+        }
+      });
+      return { data: signUpData, error: signUpError };
+    }
+
+    return { data, error };
+  };
+
   const signOut = async () => {
     if (supabase) {
       await supabase.auth.signOut();
@@ -116,7 +144,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isTeacherOrAdmin = profile ? (profile.role === 'teacher' || profile.role === 'admin') : true;
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, loading, signIn, signInWithPassword, signOut, isAdmin, isTeacherOrAdmin }}>
+    <AuthContext.Provider value={{ user, session, profile, loading, signIn, signInWithPassword, signInAsOwner, signOut, isAdmin, isTeacherOrAdmin }}>
       {children}
     </AuthContext.Provider>
   );
