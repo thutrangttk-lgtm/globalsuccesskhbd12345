@@ -16,11 +16,7 @@ export const MyLessonPlans: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProgramFilter, setSelectedProgramFilter] = useState<string>('ALL');
 
-  useEffect(() => {
-    fetchPlans();
-  }, [user]);
-
-  const fetchPlans = async () => {
+  const fetchPlans = React.useCallback(async () => {
     setLoading(true);
     if (!supabase || !isSupabaseConfigured || !user) {
       setLoading(false);
@@ -41,7 +37,11 @@ export const MyLessonPlans: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    fetchPlans();
+  }, [fetchPlans]);
 
   const handleDelete = async (id?: string) => {
     if (!id || !supabase) return;

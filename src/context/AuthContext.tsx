@@ -21,6 +21,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const fetchProfile = React.useCallback(async (userId: string) => {
+    try {
+      if (!supabase) return;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching profile:', error);
+      }
+
+      if (data) {
+        setProfile(data as Profile);
+      } else {
+        // Fallback default teacher profile
+        setProfile({
+          id: userId,
+          full_name: 'TRAN THI THU TRANG',
+          email: user?.email || 'trang.tran@primary.edu.vn',
+          role: 'teacher',
+          school_name: 'TRANG TAN KHUONG PRIMARY SCHOOL'
+        });
+      }
+    } catch (err) {
+      console.error('Unexpected error fetching profile:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.email]);
+
   useEffect(() => {
     if (!supabase || !isSupabaseConfigured) {
       setLoading(false);
@@ -52,39 +84,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
-
-  const fetchProfile = async (userId: string) => {
-    try {
-      if (!supabase) return;
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching profile:', error);
-      }
-
-      if (data) {
-        setProfile(data as Profile);
-      } else {
-        // Fallback default teacher profile
-        setProfile({
-          id: userId,
-          full_name: 'TRAN THI THU TRANG',
-          email: user?.email || 'trang.tran@primary.edu.vn',
-          role: 'teacher',
-          school_name: 'TRANG TAN KHUONG PRIMARY SCHOOL'
-        });
-      }
-    } catch (err) {
-      console.error('Unexpected error fetching profile:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [fetchProfile]);
 
   const signIn = async (email: string) => {
     if (!supabase) return { error: new Error('Supabase not configured') };

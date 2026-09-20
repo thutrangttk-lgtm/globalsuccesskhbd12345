@@ -11,6 +11,17 @@ export const LessonImageUploader: React.FC<LessonImageUploaderProps> = ({ onImag
   const [images, setImages] = useState<{ id: string; file?: File; previewUrl: string; name: string }[]>([]);
   const [analyzing, setAnalyzing] = useState(false);
 
+  const addImage = React.useCallback((file: File, customName?: string) => {
+    const url = URL.createObjectURL(file);
+    const newImg = {
+      id: `img_${Date.now()}_${Math.random()}`,
+      file,
+      previewUrl: url,
+      name: customName || file.name
+    };
+    setImages((prev) => [...prev, newImg]);
+  }, []);
+
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
       const items = e.clipboardData?.items;
@@ -28,18 +39,7 @@ export const LessonImageUploader: React.FC<LessonImageUploaderProps> = ({ onImag
 
     window.addEventListener('paste', handlePaste);
     return () => window.removeEventListener('paste', handlePaste);
-  }, [images]);
-
-  const addImage = (file: File, customName?: string) => {
-    const url = URL.createObjectURL(file);
-    const newImg = {
-      id: `img_${Date.now()}_${Math.random()}`,
-      file,
-      previewUrl: url,
-      name: customName || file.name
-    };
-    setImages((prev) => [...prev, newImg]);
-  };
+  }, [addImage]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {

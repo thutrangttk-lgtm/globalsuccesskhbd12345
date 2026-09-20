@@ -17,11 +17,7 @@ export const CurriculumSources: React.FC = () => {
 
   const previewSectionRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    fetchStorageFiles();
-  }, []);
-
-  const fetchStorageFiles = async () => {
+  const fetchStorageFiles = React.useCallback(async () => {
     setLoadingFiles(true);
     if (!supabase || !isSupabaseConfigured) {
       setLoadingFiles(false);
@@ -54,7 +50,11 @@ export const CurriculumSources: React.FC = () => {
     } finally {
       setLoadingFiles(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchStorageFiles();
+  }, [fetchStorageFiles]);
 
   const handleAnalyzeFile = async (fileName: string) => {
     setSelectedFile(fileName);
