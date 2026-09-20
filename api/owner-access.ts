@@ -15,7 +15,6 @@ export default async function handler(req: any, res: any) {
   const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://tzumhlmueqadgaxjahic.supabase.co';
   const anonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR6dW1obG11ZXFhZGdheGphaGljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk4Nzk4NzcsImV4cCI6MjEwNTQ1NTg3N30.HoXF2lnsM97QIgYgPPVYSZygzAub9KRrSZMXgiwD0AY';
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const ownerPassword = process.env.OWNER_PASSWORD || process.env.VITE_OWNER_PASSWORD || 'ThuTrang@2026';
 
   try {
     if (serviceRoleKey) {
@@ -29,7 +28,6 @@ export default async function handler(req: any, res: any) {
       if (!user) {
         const { data: newUser, error: createErr } = await supabaseAdmin.auth.admin.createUser({
           email: ownerEmail,
-          password: ownerPassword,
           email_confirm: true,
           user_metadata: { full_name: 'TRAN THI THU TRANG', role: 'teacher' }
         });
@@ -37,8 +35,7 @@ export default async function handler(req: any, res: any) {
         user = newUser.user;
       } else if (!user.email_confirmed_at) {
         await supabaseAdmin.auth.admin.updateUserById(user.id, {
-          email_confirm: true,
-          password: ownerPassword
+          email_confirm: true
         });
       }
 
@@ -69,42 +66,18 @@ export default async function handler(req: any, res: any) {
       }
     }
 
+    // Passwordless OTP / Magic link request
     const client = createClient(supabaseUrl, anonKey);
-    const { data: authData, error: authErr } = await client.auth.signInWithPassword({
+    const { error: otpErr } = await client.auth.signInWithOtp({
       email: ownerEmail,
-      password: ownerPassword
+      options: { shouldCreateUser: true }
     });
 
-    if (authErr) {
-      if (authErr.message?.includes('Invalid login credentials') || authErr.message?.includes('User not found')) {
-        const { data: signUpData, error: signUpErr } = await client.auth.signUp({
-          email: ownerEmail,
-          password: ownerPassword,
-          options: {
-            data: { full_name: 'TRAN THI THU TRANG', role: 'teacher' }
-          }
-        });
-        if (signUpErr) throw signUpErr;
-        if (signUpData.session) {
-          return res.status(200).json({
-            access_token: signUpData.session.access_token,
-            refresh_token: signUpData.session.refresh_token,
-            user: signUpData.user
-          });
-        }
-      }
-      throw authErr;
-    }
+    if (otpErr) throw otpErr;
 
-    if (authData.session) {
-      return res.status(200).json({
-        access_token: authData.session.access_token,
-        refresh_token: authData.session.refresh_token,
-        user: authData.user
-      });
-    }
-
-    throw new Error('Could not establish server session for owner account.');
+    return res.status(200).json({
+      message: 'Passwordless magic link / OTP sent for owner account.'
+    });
   } catch (err: any) {
     console.error('Owner access server function error:', err);
     return res.status(500).json({ error: err.message || 'Server-side owner authentication failed.' });

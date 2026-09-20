@@ -107,28 +107,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signInAsOwner = async () => {
     if (!supabase) return { error: new Error('Supabase not configured') };
     const ownerEmail = 'thutrang.ttk@gmail.com';
-    const ownerPassword = import.meta.env.VITE_OWNER_PASSWORD || 'ThuTrang@2026';
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: ownerEmail,
-      password: ownerPassword
-    });
-
-    if (error && (error.message?.includes('Invalid login credentials') || error.message?.includes('User not found'))) {
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email: ownerEmail,
-        password: ownerPassword,
-        options: {
-          data: {
-            full_name: 'TRAN THI THU TRANG',
-            role: 'teacher'
-          }
-        }
+    try {
+      const response = await fetch('/api/owner-access', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: ownerEmail })
       });
-      return { data: signUpData, error: signUpError };
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.error) throw new Error(result.error);
+        if (result.access_token && result.refresh_token) {
+          const { data, error: sessionErr } = await supabase.auth.setSession({
+            access_token: result.access_token,
+            refresh_token: result.refresh_token
+          });
+          if (sessionErr) throw sessionErr;
+          return { data, error: null };
+        }
+      }
+    } catch (apiErr: any) {
+      console.warn('API serverless owner access endpoint failed or not served locally, falling back to passwordless OTP flow:', apiErr);
     }
 
-    return { data, error };
+    // Fallback passwordless OTP flow (NO passwords!)
+    const { error: otpErr } = await supabase.auth.signInWithOtp({
+      email: ownerEmail,
+      options: { shouldCreateUser: true }
+    });
+
+    return { error: otpErr };
   };
 
   const signOut = async () => {

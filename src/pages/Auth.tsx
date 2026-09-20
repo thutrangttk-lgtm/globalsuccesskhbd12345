@@ -42,6 +42,14 @@ export const Auth: React.FC = () => {
     e.preventDefault();
     if (!email || !password) return;
 
+    if (email.trim().toLowerCase() === 'thutrang.ttk@gmail.com') {
+      setMessage({
+        type: 'error',
+        text: 'thutrang.ttk@gmail.com is the trusted owner account. Please click the TRUSTED OWNER ACCESS (1-CLICK) button above for passwordless sign-in.'
+      });
+      return;
+    }
+
     setLoading(true);
     setMessage(null);
 
@@ -115,7 +123,7 @@ export const Auth: React.FC = () => {
           </div>
         )}
 
-        {/* TRUSTED OWNER ACCESS CARD */}
+        {/* TRUSTED OWNER ACCESS CARD - 100% PASSWORDLESS */}
         <div className="bg-gradient-to-br from-emerald-950/60 to-slate-900 border border-emerald-500/40 rounded-2xl p-5 shadow-lg space-y-3">
           <div className="flex items-center space-x-2.5">
             <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
@@ -128,14 +136,14 @@ export const Auth: React.FC = () => {
           </div>
 
           <p className="text-[11px] text-slate-300 leading-relaxed">
-            Direct 1-Click Access for application owner. Authenticates a valid Supabase Auth session with full RLS permissions.
+            Direct Passwordless 1-Click Access for application owner. Authenticates a valid Supabase Auth session with full RLS permissions.
           </p>
 
           <button
             type="button"
             onClick={handleOwnerClick}
             disabled={ownerLoading}
-            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-4 rounded-xl text-xs transition-all shadow-md shadow-emerald-600/30 flex items-center justify-center space-x-2 cursor-pointer"
+            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 px-4 rounded-xl text-xs transition-all shadow-md shadow-emerald-600/30 flex items-center justify-center space-x-2 cursor-pointer"
           >
             <Sparkles className="w-4 h-4 text-yellow-300" />
             <span>{ownerLoading ? 'Authenticating Owner Session...' : 'TRUSTED OWNER ACCESS (1-CLICK)'}</span>
