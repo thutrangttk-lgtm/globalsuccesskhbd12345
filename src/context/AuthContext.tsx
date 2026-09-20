@@ -9,8 +9,10 @@ interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   signIn: (email: string) => Promise<{ error: any }>;
+  signInWithPassword: (email: string, password: string) => Promise<{ error: any; data?: any }>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
+  isTeacherOrAdmin: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -92,6 +94,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error };
   };
 
+  const signInWithPassword = async (email: string, password: string) => {
+    if (!supabase) return { error: new Error('Supabase not configured') };
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+    return { data, error };
+  };
+
   const signOut = async () => {
     if (supabase) {
       await supabase.auth.signOut();
@@ -102,9 +113,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const isAdmin = profile?.role === 'admin';
+  const isTeacherOrAdmin = profile ? (profile.role === 'teacher' || profile.role === 'admin') : true;
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, loading, signIn, signOut, isAdmin }}>
+    <AuthContext.Provider value={{ user, session, profile, loading, signIn, signInWithPassword, signOut, isAdmin, isTeacherOrAdmin }}>
       {children}
     </AuthContext.Provider>
   );

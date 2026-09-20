@@ -9,7 +9,7 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireAdmin }) => {
-  const { user, loading, isAdmin } = useAuth();
+  const { user, profile, loading, isAdmin, isTeacherOrAdmin } = useAuth();
 
   if (loading) {
     return (
@@ -21,6 +21,17 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requir
 
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  if (profile && !isTeacherOrAdmin) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-white flex flex-col justify-center items-center p-6 text-center">
+        <h2 className="text-xl font-bold text-red-400 mb-2">Access Restricted</h2>
+        <p className="text-sm text-slate-300 max-w-md">
+          Your account role ({profile.role}) is not authorized to access the Teacher Dashboard.
+        </p>
+      </div>
+    );
   }
 
   if (requireAdmin && !isAdmin) {
