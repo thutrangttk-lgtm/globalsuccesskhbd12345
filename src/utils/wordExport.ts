@@ -353,7 +353,7 @@ export const exportToWord = async (plan: LessonPlan) => {
   // POST-REFLECTION
   const reflectionHeading = createHeading1("POST-REFLECTION");
   const reflectionBody = createBodyParagraph(
-    plan.post_reflection || "The lesson was delivered successfully. Pupils were engaged in learning activities and achieved target outcomes. A short review will be conducted in the next lesson."
+    plan.post_reflection || "Pupils participated actively in the pair-work activity and used the target sentence pattern confidently. Some pupils still had difficulty pronouncing the new words. More pronunciation practice should be provided next time."
   );
 
   // FINAL SIGNATURE SECTION (Side by side)

@@ -5,42 +5,20 @@ const serviceRoleKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmF
 
 const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-async function checkDatabase() {
-  console.log('=== SUPABASE DATABASE TABLE VERIFICATION ===');
-
-  const tables = [
-    'profiles',
-    'teaching_programs',
-    'grades',
-    'curriculum_units',
-    'lessons',
-    'lesson_content',
-    'lesson_plans',
-    'curriculum_sources',
-    'integration_requirements',
-    'lesson_integrations',
-    'teaching_resources',
-    'lesson_source_inputs',
-    'lesson_source_images'
-  ];
-
-  let missingTables = [];
-
-  for (const table of tables) {
-    const { error } = await supabase.from(table).select('count', { count: 'exact', head: true });
-    if (error) {
-      console.log(`[x] Table '${table}': NOT CREATED YET (${error.message})`);
-      missingTables.push(table);
-    } else {
-      console.log(`[✓] Table '${table}': READY`);
-    }
+async function testSelect() {
+  console.log('--- TESTING DIRECT TABLE ACCESS ---');
+  
+  const { data: programs, error: progErr } = await supabase.from('teaching_programs').select('*');
+  console.log('teaching_programs:', progErr ? `ERROR: ${progErr.message}` : `SUCCESS (${programs.length} rows found)`);
+  if (programs && programs.length > 0) {
+    console.log('Programs data:', programs);
   }
 
-  if (missingTables.length === 0) {
-    console.log('\nALL 13 TABLES ARE ACTIVE AND READY IN SUPABASE!');
-  } else {
-    console.log(`\nNote: ${missingTables.length} tables need to be created by executing schema.sql in Supabase SQL Editor.`);
-  }
+  const { data: grades, error: gradeErr } = await supabase.from('grades').select('*');
+  console.log('grades:', gradeErr ? `ERROR: ${gradeErr.message}` : `SUCCESS (${grades.length} rows found)`);
+
+  const { data: plans, error: planErr } = await supabase.from('lesson_plans').select('*');
+  console.log('lesson_plans:', planErr ? `ERROR: ${planErr.message}` : `SUCCESS (${plans.length} rows found)`);
 }
 
-checkDatabase();
+testSelect();

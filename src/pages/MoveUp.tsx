@@ -9,11 +9,12 @@ import { LessonPlanEditor } from '../components/LessonPlanEditor';
 import { EmptyState } from '../components/EmptyState';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import type { CurriculumUnit, Lesson, LessonPlan } from '../types';
-import { useAuth } from '../context/AuthContext';
+import { generateStructuredLessonPlan } from '../utils/lessonGenerator';
+import { findTeacherChannelVideo } from '../utils/videoMatcher';
 
 export const MoveUp: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   const [selectedGrade, setSelectedGrade] = useState<number>(3);
   const [units, setUnits] = useState<CurriculumUnit[]>([]);
@@ -43,7 +44,7 @@ export const MoveUp: React.FC = () => {
           .from('teaching_programs')
           .select('id')
           .eq('code', 'MOVE_UP')
-          .single();
+          .maybeSingle();
 
         if (programData) {
           const { data } = await supabase
@@ -94,97 +95,61 @@ export const MoveUp: React.FC = () => {
     fetchLessons();
   }, [selectedUnitId]);
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     const selectedUnit = units.find(u => u.id === selectedUnitId);
     const selectedLesson = lessons.find(l => l.id === selectedLessonId);
 
-    const unitTitle = selectedUnit ? `MOVE UP Unit ${selectedUnit.unit_number}: ${selectedUnit.title}` : `MOVE UP Unit Grade ${selectedGrade}`;
-    const lessonTitle = selectedLesson ? `Lesson ${selectedLesson.lesson_number} - ${selectedLesson.title}` : 'Lesson 1';
+    let vocab: string[] = ['jump', 'run', 'swim', 'fly'];
+    let patterns: string[] = ['I can jump.', 'Can you swim? - Yes, I can.'];
 
-    const newPlan: LessonPlan = {
-      teacher_id: user?.id,
-      teaching_program_code: 'MOVE_UP',
-      grade_level: selectedGrade,
-      unit_id: selectedUnitId || undefined,
-      lesson_id: selectedLessonId || undefined,
-      title: `Lesson Plan Grade ${selectedGrade} - MOVE UP`,
-      unit_title: unitTitle,
-      lesson_title: lessonTitle,
-      duration_minutes: selectedLesson?.duration_minutes || 35,
-      vocabulary: ['jump', 'run', 'swim', 'fly'],
-      sentence_patterns: ['I can jump.', 'Can you swim? - Yes, I can.'],
-      skills: ['Listening', 'Speaking', 'Reading'],
-      competences_qualities_text: "Thereby contributing to the development of pupils' general competences and qualities (autonomy, communication, cooperation).",
-      integrations: [],
-      teaching_aids: [
-        'MOVE UP textbook Level ' + selectedGrade,
-        'Audio tracks & action cards',
-        'Interactive projector'
-      ],
-      procedures: [
-        {
-          id: 'p1',
-          stageName: 'Warm-up (5 mins)',
-          teacherActivities: [
-            'Teacher leads TPR action song (Jump, Run, Freeze).',
-            'Teacher asks pupils to demonstrate actions.'
-          ],
-          pupilActivities: [
-            'Pupils perform actions and sing along.',
-            'Pupils demonstrate actions when called.'
-          ],
-          expectedOutcome: 'Pupils participate in physical actions and warm up.',
-          evidence: 'Pupils perform actions accurately following teacher commands.',
-          postLessonAdjustments: ''
-        },
-        {
-          id: 'p2',
-          stageName: 'Presentation (10 mins)',
-          teacherActivities: [
-            'Teacher presents action verbs with flashcards.',
-            'Teacher introduces sentence pattern: I can [verb].'
-          ],
-          pupilActivities: [
-            'Pupils look, listen, and repeat action verbs.',
-            'Pupils say sentences: I can jump / I can run.'
-          ],
-          expectedOutcome: 'Pupils pronounce action verbs and state abilities.',
-          evidence: 'Pupils form correct sentences describing abilities.',
-          postLessonAdjustments: ''
-        },
-        {
-          id: 'p3',
-          stageName: 'Practice (12 mins)',
-          teacherActivities: [
-            'Teacher organizes group action guessing game.',
-            'Teacher monitors and encourages speaking.'
-          ],
-          pupilActivities: [
-            'Pupils work in groups of 4 to mime and guess actions.',
-            'Pupils ask: Can you swim? and answer.'
-          ],
-          expectedOutcome: 'Pupils use question and answer structures fluently.',
-          evidence: 'Pupils ask and answer questions accurately during the game.',
-          postLessonAdjustments: ''
-        },
-        {
-          id: 'p4',
-          stageName: 'Wrap-up (8 mins)',
-          teacherActivities: [
-            'Teacher summarizes lesson and reviews action words.',
-            'Teacher assigns simple oral review.'
-          ],
-          pupilActivities: [
-            'Pupils repeat key vocabulary.',
-            'Pupils complete wrap-up action check.'
-          ],
-          expectedOutcome: 'Pupils consolidate target action vocabulary.',
-          evidence: 'Pupils recite action verbs confidently.',
-          postLessonAdjustments: ''
+    if (supabase && selectedLessonId) {
+      try {
+        const { data: content } = await supabase
+          .from('lesson_content')
+          .select('*')
+          .eq('lesson_id', selectedLessonId)
+          .maybeSingle();
+
+        if (content) {
+          if (Array.isArray(content.vocabulary) && content.vocabulary.length > 0) vocab = content.vocabulary;
+          if (Array.isArray(content.sentence_patterns) && content.sentence_patterns.length > 0) patterns = content.sentence_patterns;
         }
-      ],
-      post_reflection: 'The MOVE UP lesson was conducted successfully with high pupil participation in TPR activities.'
-    };
+      } catch (err) {
+        console.warn('Could not fetch lesson_content for MOVE UP:', err);
+      }
+    }
+
+    const allowExternal = profile?.allow_external_youtube ?? (localStorage.getItem('allow_external_youtube') === 'true');
+    const youtubeUrl = profile?.youtube_channel_url || localStorage.getItem('teacher_youtube_url') || '';
+    const matchedVideo = await findTeacherChannelVideo({
+      teacherId: user?.id,
+      youtubeChannelUrl: youtubeUrl,
+      allowExternalYoutube: allowExternal,
+      gradeLevel: selectedGrade,
+      unitNumber: selectedUnit?.unit_number,
+      unitTitle: selectedUnit?.title,
+      topic: selectedUnit?.topic,
+      lessonTitle: selectedLesson?.title,
+      vocabulary: vocab
+    });
+
+    const newPlan = generateStructuredLessonPlan({
+      programCode: 'MOVE_UP',
+      gradeLevel: selectedGrade,
+      unitNumber: selectedUnit?.unit_number || 1,
+      unitTitle: selectedUnit ? `MOVE UP Unit ${selectedUnit.unit_number}: ${selectedUnit.title}` : `MOVE UP Unit 1`,
+      lessonNumber: selectedLesson?.lesson_number || 1,
+      lessonTitle: selectedLesson ? `Lesson ${selectedLesson.lesson_number} - ${selectedLesson.title}` : 'Lesson 1',
+      vocabulary: vocab,
+      sentencePatterns: patterns,
+      teacherInstructions,
+      youtubeChannelUrl: youtubeUrl,
+      matchedVideoTitle: matchedVideo?.title,
+      matchedVideoUrl: matchedVideo?.url,
+      matchedVideoSource: matchedVideo?.source
+    });
+
+    if (user?.id) newPlan.teacher_id = user.id;
 
     setGeneratedPlan(newPlan);
   };

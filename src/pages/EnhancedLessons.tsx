@@ -7,8 +7,11 @@ import type { LessonPlan } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 
+import { generateStructuredLessonPlan } from '../utils/lessonGenerator';
+import { findTeacherChannelVideo } from '../utils/videoMatcher';
+
 export const EnhancedLessons: React.FC = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [selectedGrade, setSelectedGrade] = useState<number>(3);
   const [lessonType, setLessonType] = useState('Speaking Practice');
   const [topic, setTopic] = useState('My Hobbies & Free Time');
@@ -34,92 +37,37 @@ export const EnhancedLessons: React.FC = () => {
     'School-specific Enhanced Lessons (Bài dạy tăng cường nhà trường)'
   ];
 
-  const handleGenerate = () => {
-    const vocabList = vocabulary.split(',').map(s => s.trim()).filter(Boolean);
-    const patternList = sentencePatterns.split(';').map(s => s.trim()).filter(Boolean);
+  const handleGenerate = async () => {
+    const vocabList = vocabulary.split(',').map(v => v.trim()).filter(Boolean);
+    const patternList = sentencePatterns.split(';').map(p => p.trim()).filter(Boolean);
 
-    const newPlan: LessonPlan = {
-      teacher_id: user?.id,
-      teaching_program_code: 'ENHANCED',
-      grade_level: selectedGrade,
-      title: `Lesson Plan Grade ${selectedGrade} - ENHANCED ENGLISH`,
-      unit_title: `TOPIC: ${topic.toUpperCase()}`,
-      lesson_title: `${lessonType} - ${topic}`,
-      duration_minutes: duration,
-      vocabulary: vocabList.length > 0 ? vocabList : ['reading', 'singing', 'dancing'],
-      sentence_patterns: patternList.length > 0 ? patternList : ['What do you like doing? - I like...'],
-      skills: ['Speaking', 'Listening'],
-      competences_qualities_text: "Thereby contributing to the development of pupils' general competences and qualities (autonomy, communication, cooperation).",
-      integrations: [],
-      teaching_aids: [
-        'Flashcards & topic pictures',
-        'Audio tracks',
-        'Worksheets & interactive board'
-      ],
-      procedures: [
-        {
-          id: 'p1',
-          stageName: 'Warm-up & Introduction (5 mins)',
-          teacherActivities: [
-            'Teacher greets class and shows topic pictures.',
-            'Teacher asks pupils to identify hobbies.'
-          ],
-          pupilActivities: [
-            'Pupils observe pictures and call out hobby words.',
-            'Pupils participate in warm-up activity.'
-          ],
-          expectedOutcome: 'Pupils recall target hobby vocabulary.',
-          evidence: 'Pupils identify pictures correctly.',
-          postLessonAdjustments: ''
-        },
-        {
-          id: 'p2',
-          stageName: 'Focused Practice (15 mins)',
-          teacherActivities: [
-            'Teacher models sentence pattern: What do you like doing?',
-            'Teacher organizes pair work practice.'
-          ],
-          pupilActivities: [
-            'Pupils repeat sentence pattern after teacher.',
-            'Pupils ask and answer in pairs using hobby cards.'
-          ],
-          expectedOutcome: 'Pupils ask and answer about hobbies fluently.',
-          evidence: 'Pupils complete pair interaction accurately.',
-          postLessonAdjustments: ''
-        },
-        {
-          id: 'p3',
-          stageName: 'Speaking Game & Presentation (10 mins)',
-          teacherActivities: [
-            'Teacher conducts "Find Someone Who..." speaking game.',
-            'Teacher invites pairs to present in front of class.'
-          ],
-          pupilActivities: [
-            'Pupils move around class to ask classmates about hobbies.',
-            'Pupils present their findings to the class.'
-          ],
-          expectedOutcome: 'Pupils use English confidently in authentic interaction.',
-          evidence: 'Pupils present classmate preferences accurately.',
-          postLessonAdjustments: ''
-        },
-        {
-          id: 'p4',
-          stageName: 'Consolidation & Feedback (5 mins)',
-          teacherActivities: [
-            'Teacher summarizes key language points.',
-            'Teacher gives positive feedback and awards group points.'
-          ],
-          pupilActivities: [
-            'Pupils review target words together.',
-            'Pupils listen to teacher feedback.'
-          ],
-          expectedOutcome: 'Pupils consolidate learned structures.',
-          evidence: 'Pupils recite target structures accurately.',
-          postLessonAdjustments: ''
-        }
-      ],
-      post_reflection: 'The enhanced English lesson was delivered successfully. Pupils enjoyed pair speaking activities and actively engaged in English communication.'
-    };
+    const allowExternal = profile?.allow_external_youtube ?? (localStorage.getItem('allow_external_youtube') === 'true');
+    const youtubeUrl = profile?.youtube_channel_url || localStorage.getItem('teacher_youtube_url') || '';
+    const matchedVideo = await findTeacherChannelVideo({
+      teacherId: user?.id,
+      youtubeChannelUrl: youtubeUrl,
+      allowExternalYoutube: allowExternal,
+      gradeLevel: selectedGrade,
+      topic,
+      lessonTitle: topic || lessonType,
+      vocabulary: vocabList
+    });
+
+    const newPlan = generateStructuredLessonPlan({
+      programCode: 'ENHANCED',
+      gradeLevel: selectedGrade,
+      unitTitle: `Bài Dạy Tăng Cường: ${lessonType}`,
+      lessonTitle: topic || lessonType,
+      vocabulary: vocabList.length > 0 ? vocabList : ['speaking', 'listening', 'reading', 'vocabulary'],
+      sentencePatterns: patternList.length > 0 ? patternList : ['What do you like doing? - I like...'],
+      teacherInstructions,
+      youtubeChannelUrl: youtubeUrl,
+      matchedVideoTitle: matchedVideo?.title,
+      matchedVideoUrl: matchedVideo?.url,
+      matchedVideoSource: matchedVideo?.source
+    });
+
+    if (user?.id) newPlan.teacher_id = user.id;
 
     setGeneratedPlan(newPlan);
   };

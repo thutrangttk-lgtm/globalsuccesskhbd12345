@@ -6,6 +6,8 @@ export interface Profile {
   email: string;
   role: Role;
   school_name: string;
+  youtube_channel_url?: string;
+  allow_external_youtube?: boolean;
   created_at?: string;
 }
 
@@ -52,14 +54,24 @@ export interface ProcedureRow {
   evidence: string;
   integrationCode?: string;
   integrationLabel?: string;
+  videoMetadata?: {
+    title: string;
+    url: string;
+    source: 'teacher' | 'external';
+  };
   postLessonAdjustments: string; // BLANK when generating new
 }
 
 export interface IntegrationItem {
   id: string;
-  type: 'NLS' | 'AI' | 'CDS' | 'ETHICS' | 'ATGT' | 'GDDP' | 'STEM' | 'ANQP' | 'HUMAN_RIGHTS' | 'CHILDREN_RIGHTS' | 'ENVIRONMENT' | 'WATER_PROTECTION';
+  type: 'NLS' | 'AI' | 'CDS' | 'ETHICS' | 'ATGT' | 'GDDP' | 'STEM' | 'ANQP' | 'HUMAN_RIGHTS' | 'CHILDREN_RIGHTS' | 'ENVIRONMENT' | 'WATER_PROTECTION' | 'CUSTOM';
   code?: string;
   wording: string;
+  official_code?: string;
+  official_wording?: string;
+  custom_teacher_content?: string;
+  isCustomLabel?: boolean;
+  customLabelText?: string;
   domain?: string;
   componentCompetence?: string;
   level?: string;
@@ -88,6 +100,11 @@ export interface LessonPlan {
   procedures: ProcedureRow[];
   post_reflection: string;
   teacher_instructions?: string;
+  videoMetadata?: {
+    title: string;
+    url: string;
+    source: 'teacher' | 'external';
+  };
   status?: 'DRAFT' | 'COMPLETED' | 'ARCHIVED';
   created_at?: string;
   updated_at?: string;

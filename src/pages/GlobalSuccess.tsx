@@ -10,10 +10,12 @@ import { EmptyState } from '../components/EmptyState';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import type { CurriculumUnit, Lesson, LessonPlan } from '../types';
 import { useAuth } from '../context/AuthContext';
+import { generateStructuredLessonPlan } from '../utils/lessonGenerator';
+import { findTeacherChannelVideo } from '../utils/videoMatcher';
 
 export const GlobalSuccess: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   const [selectedGrade, setSelectedGrade] = useState<number>(3);
   const [units, setUnits] = useState<CurriculumUnit[]>([]);
@@ -43,7 +45,7 @@ export const GlobalSuccess: React.FC = () => {
           .from('teaching_programs')
           .select('id')
           .eq('code', 'GLOBAL_SUCCESS')
-          .single();
+          .maybeSingle();
 
         if (programData) {
           const { data, error } = await supabase
@@ -96,108 +98,98 @@ export const GlobalSuccess: React.FC = () => {
     fetchLessons();
   }, [selectedUnitId]);
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     const selectedUnit = units.find(u => u.id === selectedUnitId);
     const selectedLesson = lessons.find(l => l.id === selectedLessonId);
 
-    const unitTitle = selectedUnit ? `Unit ${selectedUnit.unit_number}: ${selectedUnit.title}` : `Unit Title Grade ${selectedGrade}`;
-    const lessonTitle = selectedLesson ? `Lesson ${selectedLesson.lesson_number} - ${selectedLesson.title}` : 'Lesson 1';
+    let vocab: string[] = ['hello', 'hi', 'goodbye', 'friend'];
+    let patterns: string[] = ['How are you? - I am fine, thank you.'];
 
-    const newPlan: LessonPlan = {
-      teacher_id: user?.id,
-      teaching_program_code: 'GLOBAL_SUCCESS',
-      grade_level: selectedGrade,
-      unit_id: selectedUnitId || undefined,
-      lesson_id: selectedLessonId || undefined,
-      title: `Lesson Plan Grade ${selectedGrade} - Global Success`,
-      unit_title: unitTitle,
-      lesson_title: lessonTitle,
-      duration_minutes: selectedLesson?.duration_minutes || 35,
-      publisher: 'VIETNAM EDUCATION PUBLISHING HOUSE',
-      vocabulary: ['hello', 'hi', 'goodbye', 'friend'],
-      sentence_patterns: ['How are you? - I am fine, thank you.', 'What is your name? - My name is...'],
-      skills: ['Listening', 'Speaking', 'Reading', 'Writing'],
-      competences_qualities_text: "Thereby contributing to the development of pupils' general competences and qualities (autonomy, communication, cooperation).",
-      integrations: [
-        {
-          id: 'int_1',
-          type: 'NLS',
-          code: 'NLS_1.1.2',
-          wording: 'Pupils select digital learning activities under teacher guidance.'
+    if (supabase && selectedLessonId) {
+      try {
+        const { data: content } = await supabase
+          .from('lesson_content')
+          .select('*')
+          .eq('lesson_id', selectedLessonId)
+          .maybeSingle();
+
+        if (content) {
+          if (Array.isArray(content.vocabulary) && content.vocabulary.length > 0) {
+            vocab = content.vocabulary;
+          }
+          if (Array.isArray(content.sentence_patterns) && content.sentence_patterns.length > 0) {
+            patterns = content.sentence_patterns;
+          }
         }
-      ],
-      teaching_aids: [
-        'Global Success textbook Grade ' + selectedGrade,
-        "Teacher's Book",
-        'Audio tracks & flashcards',
-        'Interactive whiteboard / Projector'
-      ],
-      procedures: [
-        {
-          id: 'p1',
-          stageName: 'Warm-up (5 mins)',
-          teacherActivities: [
-            'Teacher greets pupils and plays the warm-up song.',
-            'Teacher asks pupils simple questions to review previous vocabulary.'
-          ],
-          pupilActivities: [
-            'Pupils greet the teacher and sing along.',
-            'Pupils answer teacher questions in chorus.'
-          ],
-          expectedOutcome: 'Pupils feel motivated and review previous words.',
-          evidence: 'Pupils sing along enthusiastically and answer questions accurately.',
-          postLessonAdjustments: '' // BLANK
-        },
-        {
-          id: 'p2',
-          stageName: 'Presentation (10 mins)',
-          teacherActivities: [
-            'Teacher presents new vocabulary using flashcards and audio.',
-            'Teacher introduces target sentence pattern on the board.'
-          ],
-          pupilActivities: [
-            'Pupils look, listen, and repeat new vocabulary.',
-            'Pupils observe the sentence pattern and repeat.'
-          ],
-          expectedOutcome: 'Pupils pronounce target words correctly and understand sentence pattern.',
-          evidence: 'Pupils pronounce words correctly and repeat sentences with accurate intonation.',
-          integrationCode: 'NLS_1.1.2',
-          integrationLabel: 'NLS',
-          postLessonAdjustments: '' // BLANK
-        },
-        {
-          id: 'p3',
-          stageName: 'Practice (12 mins)',
-          teacherActivities: [
-            'Teacher organizes pair work for pupils to practise sentence pattern.',
-            'Teacher monitors pairs and provides support when necessary.'
-          ],
-          pupilActivities: [
-            'Pupils practise asking and answering in pairs.',
-            'Pupils switch roles with partners.'
-          ],
-          expectedOutcome: 'Pupils use target sentence patterns in pair communication.',
-          evidence: 'Pupils ask and answer accurately with their partners.',
-          postLessonAdjustments: '' // BLANK
-        },
-        {
-          id: 'p4',
-          stageName: 'Production & Consolidation (8 mins)',
-          teacherActivities: [
-            'Teacher invites pair presentations in front of class.',
-            'Teacher summarizes key words and gives feedback.'
-          ],
-          pupilActivities: [
-            'Pupils present pair work in front of class.',
-            'Pupils listen to feedback and repeat key points.'
-          ],
-          expectedOutcome: 'Pupils communicate confidently using target language.',
-          evidence: 'Pupils present dialogue clearly before the class.',
-          postLessonAdjustments: '' // BLANK
+      } catch (err) {
+        console.warn('Could not fetch lesson_content:', err);
+      }
+    }
+
+    // Fetch verified integration standards for Grade
+    let integrations: { type: any; officialCode: string; officialWording: string; domain?: string }[] = [
+      {
+        type: 'NLS',
+        officialCode: `NLS_${selectedGrade}.1.2`,
+        officialWording: 'Pupils select and use teacher-approved digital resources during lesson practice.',
+        domain: 'Domain 1: Digital Media & Learning'
+      }
+    ];
+
+    if (supabase) {
+      try {
+        const { data: reqs } = await supabase
+          .from('integration_requirements')
+          .select('*')
+          .eq('grade_level', selectedGrade)
+          .eq('verification_status', 'VERIFIED')
+          .limit(2);
+
+        if (reqs && reqs.length > 0) {
+          integrations = reqs.map(r => ({
+            type: r.integration_type as any,
+            officialCode: r.official_code,
+            officialWording: r.official_wording,
+            domain: r.domain || undefined
+          }));
         }
-      ],
-      post_reflection: 'The lesson was delivered successfully according to Global Success curriculum objectives. Pupils were active and engaged.'
-    };
+      } catch (err) {
+        console.warn('Could not fetch integration_requirements:', err);
+      }
+    }
+
+    const allowExternal = profile?.allow_external_youtube ?? (localStorage.getItem('allow_external_youtube') === 'true');
+    const youtubeUrl = profile?.youtube_channel_url || localStorage.getItem('teacher_youtube_url') || '';
+    const matchedVideo = await findTeacherChannelVideo({
+      teacherId: user?.id,
+      youtubeChannelUrl: youtubeUrl,
+      allowExternalYoutube: allowExternal,
+      gradeLevel: selectedGrade,
+      unitNumber: selectedUnit?.unit_number,
+      unitTitle: selectedUnit?.title,
+      topic: selectedUnit?.topic,
+      lessonTitle: selectedLesson?.title,
+      vocabulary: vocab
+    });
+
+    const newPlan = generateStructuredLessonPlan({
+      programCode: 'GLOBAL_SUCCESS',
+      gradeLevel: selectedGrade,
+      unitNumber: selectedUnit?.unit_number || 1,
+      unitTitle: selectedUnit ? `Unit ${selectedUnit.unit_number}: ${selectedUnit.title}` : `Unit 1`,
+      lessonNumber: selectedLesson?.lesson_number || 1,
+      lessonTitle: selectedLesson ? `Lesson ${selectedLesson.lesson_number} - ${selectedLesson.title}` : 'Lesson 1',
+      vocabulary: vocab,
+      sentencePatterns: patterns,
+      teacherInstructions,
+      availableIntegrations: integrations,
+      youtubeChannelUrl: youtubeUrl,
+      matchedVideoTitle: matchedVideo?.title,
+      matchedVideoUrl: matchedVideo?.url,
+      matchedVideoSource: matchedVideo?.source
+    });
+
+    if (user?.id) newPlan.teacher_id = user.id;
 
     setGeneratedPlan(newPlan);
   };
@@ -231,22 +223,34 @@ export const GlobalSuccess: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 py-10 px-4 sm:px-6">
-      <div className="max-w-4xl mx-auto space-y-8">
-        
+    <div className="max-w-5xl mx-auto space-y-8">
+      
+      <div className="relative overflow-hidden bg-gradient-to-r from-[#e6f7f5] via-[#edf9f8] to-[#fff3f5] border border-[#d5f0ec] rounded-3xl p-6 sm:p-8 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="flex items-center space-x-4">
-          <div className="p-3 bg-blue-600 rounded-2xl text-white shadow-lg">
+          <div className="p-3 bg-[#0d9488] rounded-2xl text-white shadow-md shadow-teal-700/20 shrink-0">
             <BookOpen className="w-7 h-7" />
           </div>
           <div>
-            <h1 className="text-2xl font-black text-white tracking-wide">GLOBAL SUCCESS</h1>
-            <p className="text-xs text-blue-400 font-semibold uppercase tracking-wider">
-              Official Textbook Series • Grades 1–5
+            <div className="inline-flex items-center space-x-2 bg-[#ccfbf1] text-[#0f766e] border border-teal-300 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold mb-1">
+              <span>Official Primary English Series</span>
+            </div>
+            <h1 className="text-2xl font-black text-[#0f766e] tracking-wide">GLOBAL SUCCESS</h1>
+            <p className="text-xs text-slate-600 max-w-md">
+              Official Primary English textbook series by Vietnam Education Publishing House (Grades 1–5).
             </p>
           </div>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+        <div className="hidden sm:block w-48 h-28 relative rounded-2xl overflow-hidden shadow-xs border border-white shrink-0">
+          <img
+            src="/images/curriculum_banner.jpg"
+            alt="English textbooks illustration"
+            className="w-full h-full object-cover"
+          />
+        </div>
+      </div>
+
+      <div className="bg-white border border-[#e0f0ee] rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
           <GradeSelector selectedGrade={selectedGrade} onSelectGrade={setSelectedGrade} />
 
           {units.length === 0 && !loadingUnits ? (
@@ -293,7 +297,6 @@ export const GlobalSuccess: React.FC = () => {
           )}
         </div>
 
-      </div>
     </div>
   );
 };

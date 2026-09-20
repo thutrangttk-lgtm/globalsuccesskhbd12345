@@ -253,6 +253,14 @@ CREATE TRIGGER on_auth_user_created
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- ============================================================
+-- SCHEMA PERMISSIONS GRANT
+-- ============================================================
+GRANT USAGE ON SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+
+-- ============================================================
 -- ROW LEVEL SECURITY (RLS) ENABLEMENT
 -- ============================================================
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;

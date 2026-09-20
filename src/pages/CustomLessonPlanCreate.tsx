@@ -11,9 +11,12 @@ import type { ExtractedLessonInfo, LessonPlan } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 
+import { generateStructuredLessonPlan } from '../utils/lessonGenerator';
+import { findTeacherChannelVideo } from '../utils/videoMatcher';
+
 export const CustomLessonPlanCreate: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   const [activeTab, setActiveTab] = useState<'form' | 'paste' | 'image' | 'mixed'>('mixed');
 
@@ -46,42 +49,34 @@ export const CustomLessonPlanCreate: React.FC = () => {
     }));
   };
 
-  const handleGenerate = () => {
-    const newPlan: LessonPlan = {
-      teacher_id: user?.id,
-      teaching_program_code: 'CUSTOM',
-      grade_level: lessonInfo.gradeLevel || 3,
-      title: `Lesson Plan Grade ${lessonInfo.gradeLevel || 3} - CUSTOM LESSON PLAN`,
-      unit_title: lessonInfo.unitTitle ? lessonInfo.unitTitle.toUpperCase() : 'UNIT CUSTOM',
-      lesson_title: lessonInfo.lessonTitle || 'Lesson 1',
-      duration_minutes: lessonInfo.durationMinutes || 35,
+  const handleGenerate = async () => {
+    const allowExternal = profile?.allow_external_youtube ?? (localStorage.getItem('allow_external_youtube') === 'true');
+    const youtubeUrl = profile?.youtube_channel_url || localStorage.getItem('teacher_youtube_url') || '';
+    const matchedVideo = await findTeacherChannelVideo({
+      teacherId: user?.id,
+      youtubeChannelUrl: youtubeUrl,
+      allowExternalYoutube: allowExternal,
+      gradeLevel: lessonInfo.gradeLevel || 3,
+      unitTitle: lessonInfo.unitTitle,
+      lessonTitle: lessonInfo.lessonTitle,
+      vocabulary: lessonInfo.vocabulary
+    });
+
+    const newPlan = generateStructuredLessonPlan({
+      programCode: 'CUSTOM',
+      gradeLevel: lessonInfo.gradeLevel || 3,
+      unitTitle: lessonInfo.unitTitle ? lessonInfo.unitTitle.toUpperCase() : 'UNIT CUSTOM',
+      lessonTitle: lessonInfo.lessonTitle || 'Lesson 1',
       vocabulary: lessonInfo.vocabulary || ['hello', 'hi'],
-      sentence_patterns: lessonInfo.sentencePatterns || ['How are you?'],
-      skills: lessonInfo.skills || ['Listening', 'Speaking', 'Reading', 'Writing'],
-      competences_qualities_text: "Thereby contributing to the development of pupils' general competences and qualities (autonomy, communication, cooperation).",
-      integrations: [],
-      teaching_aids: [
-        'Textbook material & teacher notes',
-        'Audio & flashcards',
-        'Interactive whiteboard / Projector'
-      ],
-      procedures: (lessonInfo.activities || []).map((act, idx) => ({
-        id: `proc_custom_${idx}`,
-        stageName: `Stage ${idx + 1}: ${act.split(':')[0] || 'Activity'}`,
-        teacherActivities: [
-          `Teacher introduces ${act}.`,
-          'Teacher gives clear instructions and models.'
-        ],
-        pupilActivities: [
-          `Pupils participate in ${act}.`,
-          'Pupils practise in pairs/groups.'
-        ],
-        expectedOutcome: 'Pupils perform target language task accurately.',
-        evidence: 'Pupils pronounce words correctly and complete activity.',
-        postLessonAdjustments: '' // BLANK
-      })),
-      post_reflection: 'The custom lesson plan was created successfully from teacher-provided inputs and executed smoothly.'
-    };
+      sentencePatterns: lessonInfo.sentencePatterns || ['How are you? - I am fine, thank you.'],
+      teacherInstructions,
+      youtubeChannelUrl: youtubeUrl,
+      matchedVideoTitle: matchedVideo?.title,
+      matchedVideoUrl: matchedVideo?.url,
+      matchedVideoSource: matchedVideo?.source
+    });
+
+    if (user?.id) newPlan.teacher_id = user.id;
 
     setGeneratedPlan(newPlan);
   };

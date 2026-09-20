@@ -1,6 +1,13 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, LibraryBig, Sparkles, FilePenLine, FileText, Database, FolderArchive, Settings as SettingsIcon } from 'lucide-react';
+import { 
+  BookOpen, 
+  LibraryBig, 
+  Sparkles, 
+  FilePenLine, 
+  Heart, 
+  Lightbulb 
+} from 'lucide-react';
 import { ProgramCard } from '../components/ProgramCard';
 import { useAuth } from '../context/AuthContext';
 
@@ -9,153 +16,128 @@ export const TeacherDashboard: React.FC = () => {
   const { profile } = useAuth();
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 py-10 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto space-y-10">
+    <div className="space-y-8">
+      
+      {/* Welcome Banner matching screenshot */}
+      <div className="relative overflow-hidden bg-gradient-to-r from-[#e6f7f5] via-[#edf9f8] to-[#fff3f5] border border-[#d5f0ec] rounded-3xl p-6 sm:p-8 shadow-xs flex flex-col md:flex-row items-center justify-between gap-6">
         
-        {/* Welcome Banner */}
-        <div className="bg-gradient-to-r from-blue-900/60 via-indigo-900/40 to-slate-900 border border-blue-500/30 rounded-3xl p-8 shadow-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div>
-            <div className="inline-flex items-center space-x-2 bg-blue-500/20 text-blue-300 border border-blue-500/40 px-3 py-1 rounded-full text-xs font-semibold mb-3">
-              <span>Primary English Education Studio</span>
-            </div>
-            <h1 className="text-3xl font-black text-white tracking-wide">
-              Welcome, {profile?.full_name || 'Teacher Tran Thi Thu Trang'}
-            </h1>
-            <p className="text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
-              Trang Tan Khuong Primary School • Hiep Phuoc Commune. Select a creation mode below to build verified, CV 2345-compliant lesson plans for Grades 1–5.
-            </p>
+        <div className="relative z-10 space-y-2 max-w-xl">
+          <div className="flex items-center space-x-1.5 text-[#0d9488] text-sm font-bold font-serif italic">
+            <Sparkles className="w-4 h-4 text-teal-500" />
+            <span>Hello, Teacher!</span>
+            <Heart className="w-3.5 h-3.5 fill-pink-400 text-pink-400" />
           </div>
 
-          <div className="flex items-center space-x-3 shrink-0">
-            <button
-              onClick={() => navigate('/my-plans')}
-              className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-5 py-3 rounded-2xl text-sm transition-all shadow-lg shadow-blue-600/30 flex items-center space-x-2"
-            >
-              <FileText className="w-4 h-4" />
-              <span>My Saved Plans</span>
-            </button>
+          <h1 className="text-3xl sm:text-4xl font-black text-[#0f766e] tracking-tight">
+            Welcome, {profile?.full_name?.toUpperCase() || 'TRAN THI THU TRANG'}
+          </h1>
+
+          <p className="text-xs text-slate-600 leading-relaxed pt-1">
+            {profile?.school_name || 'Trang Tấn Khương Primary School'} - Hiệp Phước Commune. Select a creation mode below to build verified, CV 2345-compliant lesson plans for Grades 1–5.
+          </p>
+
+          <div className="pt-2 flex items-center space-x-2">
+            <span className="text-sm font-serif italic font-bold text-pink-500">
+              Small steps &rarr; Big progress
+            </span>
+            <Heart className="w-3.5 h-3.5 fill-pink-400 text-pink-400" />
           </div>
         </div>
 
-        {/* FOUR MAJOR CREATION CARDS */}
-        <div>
-          <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4 px-1">
-            Lesson Plan Creation Modes
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            
-            {/* 1. GLOBAL SUCCESS */}
-            <ProgramCard
-              title="GLOBAL SUCCESS"
-              subtitle="Official Textbook Series"
-              description="Standard lesson plans for Global Success English Grades 1, 2, 3, 4, and 5 based on verified source materials."
-              icon={BookOpen}
-              badge="Grades 1–5"
-              colorClass="bg-blue-600"
-              onClick={() => navigate('/create/global-success')}
-            />
-
-            {/* 2. MOVE UP */}
-            <ProgramCard
-              title="MOVE UP"
-              subtitle="Enhanced Curriculum"
-              description="Dedicated MOVE UP lesson planning with independent unit structures, vocabulary, and learning outcomes."
-              icon={LibraryBig}
-              badge="Level 1–5"
-              colorClass="bg-indigo-600"
-              onClick={() => navigate('/create/move-up')}
-            />
-
-            {/* 3. BÀI DẠY TĂNG CƯỜNG */}
-            <ProgramCard
-              title="BÀI DẠY TĂNG CƯỜNG"
-              subtitle="Enhanced Lessons"
-              description="Supplementary English lessons for Reinforcement, Revision, Speaking practice, Phonics, and Theme-based topics."
-              icon={Sparkles}
-              badge="Enhanced"
-              colorClass="bg-emerald-600"
-              onClick={() => navigate('/create/enhanced')}
-            />
-
-            {/* 4. TẠO KHBD THEO THÔNG TIN NHẬP / CUSTOM LESSON PLAN */}
-            <ProgramCard
-              title="CUSTOM LESSON PLAN"
-              subtitle="Tạo KHBD Theo Thông Tin Nhập"
-              description="Generate custom lesson plans from manual inputs, pasted lesson text, or textbook screenshots (OCR & OCR analysis)."
-              icon={FilePenLine}
-              badge="Text / Image"
-              colorClass="bg-amber-600"
-              onClick={() => navigate('/create/custom')}
-            />
-
-          </div>
-        </div>
-
-        {/* SECONDARY FUNCTIONS */}
-        <div>
-          <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4 px-1">
-            Secondary Management Tools
-          </h2>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            
-            <button
-              onClick={() => navigate('/my-plans')}
-              className="p-5 bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-2xl text-left transition-all hover:bg-slate-800/80 group flex items-center space-x-4"
-            >
-              <div className="p-3 rounded-xl bg-blue-500/10 text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-colors">
-                <FileText className="w-6 h-6" />
-              </div>
-              <div>
-                <h4 className="font-bold text-white text-sm">MY LESSON PLANS</h4>
-                <p className="text-xs text-slate-400">View & export saved plans</p>
-              </div>
-            </button>
-
-            <button
-              onClick={() => navigate('/curriculum-sources')}
-              className="p-5 bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-2xl text-left transition-all hover:bg-slate-800/80 group flex items-center space-x-4"
-            >
-              <div className="p-3 rounded-xl bg-indigo-500/10 text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white transition-colors">
-                <Database className="w-6 h-6" />
-              </div>
-              <div>
-                <h4 className="font-bold text-white text-sm">CURRICULUM SOURCES</h4>
-                <p className="text-xs text-slate-400">Official standards & NLS/AI codes</p>
-              </div>
-            </button>
-
-            <button
-              onClick={() => navigate('/teaching-resources')}
-              className="p-5 bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-2xl text-left transition-all hover:bg-slate-800/80 group flex items-center space-x-4"
-            >
-              <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
-                <FolderArchive className="w-6 h-6" />
-              </div>
-              <div>
-                <h4 className="font-bold text-white text-sm">TEACHING RESOURCES</h4>
-                <p className="text-xs text-slate-400">Flashcards, audio & materials</p>
-              </div>
-            </button>
-
-            <button
-              onClick={() => navigate('/settings')}
-              className="p-5 bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-2xl text-left transition-all hover:bg-slate-800/80 group flex items-center space-x-4"
-            >
-              <div className="p-3 rounded-xl bg-slate-800 text-slate-300 group-hover:bg-slate-700 group-hover:text-white transition-colors">
-                <SettingsIcon className="w-6 h-6" />
-              </div>
-              <div>
-                <h4 className="font-bold text-white text-sm">SETTINGS</h4>
-                <p className="text-xs text-slate-400">Teacher profile & school info</p>
-              </div>
-            </button>
-
-          </div>
+        {/* Right 3D Illustration Graphic */}
+        <div className="w-72 h-40 relative rounded-2xl overflow-hidden shadow-md border border-white/80 shrink-0">
+          <img
+            src="/images/dashboard_main_hero.jpg"
+            alt="English is fun illustration"
+            className="w-full h-full object-cover"
+          />
         </div>
 
       </div>
+
+      {/* LESSON PLAN CREATION MODES */}
+      <div className="space-y-4">
+        <div className="flex items-center space-x-2 px-1">
+          <BookOpen className="w-4 h-4 text-[#0f766e]" />
+          <h2 className="text-xs font-extrabold uppercase tracking-wider text-[#0f766e]">
+            LESSON PLAN CREATION MODES
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+          
+          {/* 1. GLOBAL SUCCESS */}
+          <ProgramCard
+            title="GLOBAL SUCCESS"
+            subtitle="OFFICIAL TEXTBOOK SERIES"
+            description="Standard lesson plans for Global Success English Grades 1, 2, 3, 4, and 5 based on verified source materials."
+            icon={BookOpen}
+            badge="Grades 1–5"
+            theme="teal"
+            illustrationUrl="/images/curriculum_banner.jpg"
+            onClick={() => navigate('/create/global-success')}
+          />
+
+          {/* 2. MOVE UP */}
+          <ProgramCard
+            title="MOVE UP"
+            subtitle="ENHANCED CURRICULUM"
+            description="Dedicated MOVE UP lesson planning with independent unit structures, vocabulary, and learning outcomes."
+            icon={LibraryBig}
+            badge="Level 1–5"
+            theme="blue"
+            illustrationUrl="/images/dashboard_main_hero.jpg"
+            onClick={() => navigate('/create/move-up')}
+          />
+
+          {/* 3. BÀI DẠY TĂNG CƯỜNG */}
+          <ProgramCard
+            title="BÀI DẠY TĂNG CƯỜNG"
+            subtitle="ENHANCED LESSONS"
+            description="Supplementary English lessons for Reinforcement, Revision, Speaking practice, Phonics, and Theme-based topics."
+            icon={Sparkles}
+            badge="Enhanced"
+            theme="orange"
+            illustrationUrl="/images/bottom_quote_banner.jpg"
+            onClick={() => navigate('/create/enhanced')}
+          />
+
+          {/* 4. CUSTOM LESSON PLAN */}
+          <ProgramCard
+            title="CUSTOM LESSON PLAN"
+            subtitle="TẠO KHBD THEO THÔNG TIN NHẬP"
+            description="Generate custom lesson plans from manual inputs, pasted lesson text, or textbook screenshots (OCR & OCR analysis)."
+            icon={FilePenLine}
+            badge="Text / Image"
+            theme="pink"
+            illustrationUrl="/images/lesson_plan_header.jpg"
+            onClick={() => navigate('/create/custom')}
+          />
+
+        </div>
+      </div>
+
+      {/* Bottom Quote Banner */}
+      <div className="bg-white border border-[#e2f1f0] rounded-3xl p-6 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center space-x-3">
+          <div className="p-2.5 rounded-2xl bg-amber-100 text-amber-600 shrink-0">
+            <Lightbulb className="w-5 h-5" />
+          </div>
+          <p className="text-base font-serif italic text-teal-800 font-bold">
+            &ldquo;Good planning today creates confident learners tomorrow.&rdquo;
+            <span className="text-pink-500 font-normal ml-1.5">♡</span>
+          </p>
+        </div>
+
+        <div className="w-48 h-16 relative rounded-2xl overflow-hidden shadow-xs shrink-0 hidden sm:block">
+          <img
+            src="/images/bottom_quote_banner.jpg"
+            alt="Tulip illustration"
+            className="w-full h-full object-cover"
+          />
+        </div>
+      </div>
+
     </div>
   );
 };
