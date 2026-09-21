@@ -103,29 +103,53 @@ export const exportToWord = async (plan: LessonPlan) => {
     );
   }
 
-  // Lesson Identification
+  // Helper formatters
+  const formatUnitHeader = (unitTitle?: string): string => {
+    if (!unitTitle) return 'UNIT 1';
+    let clean = unitTitle.trim();
+    if (!clean.toUpperCase().startsWith('UNIT')) {
+      clean = `UNIT: ${clean}`;
+    }
+    return clean.toUpperCase();
+  };
+
+  const formatLessonHeader = (lessonTitle?: string, lessonId?: string): string => {
+    if (lessonTitle) {
+      const match = lessonTitle.match(/Lesson\s*(\d+)/i);
+      if (match) return `LESSON ${match[1]}`;
+    }
+    if (lessonId) {
+      const match = lessonId.match(/\d+/);
+      if (match) return `LESSON ${match[0]}`;
+    }
+    return 'LESSON 1';
+  };
+
+  // Lesson Identification (Center Aligned and Bold 4 lines header)
   const lessonIdParagraphs = [
     new Paragraph({
-      alignment: AlignmentType.LEFT,
+      alignment: AlignmentType.CENTER,
       spacing: { after: 60 },
       children: [
         new TextRun({
-          text: `${plan.unit_title ? plan.unit_title.toUpperCase() : `UNIT ${plan.unit_id || ''}`}`,
+          text: formatUnitHeader(plan.unit_title),
           font: "Times New Roman",
-          size: 26,
-          bold: true
+          size: 28, // 14pt
+          bold: true,
+          color: "1F4E78"
         })
       ]
     }),
     new Paragraph({
-      alignment: AlignmentType.LEFT,
-      spacing: { after: 60 },
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 200 },
       children: [
         new TextRun({
-          text: `LESSON: ${plan.lesson_title || plan.title}`,
+          text: formatLessonHeader(plan.lesson_title, plan.lesson_id),
           font: "Times New Roman",
-          size: 26,
-          bold: true
+          size: 28, // 14pt
+          bold: true,
+          color: "1F4E78"
         })
       ]
     }),

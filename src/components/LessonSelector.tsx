@@ -26,7 +26,7 @@ export const LessonSelector: React.FC<LessonSelectorProps> = ({
           No lessons found for this unit.
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           {lessons.map((lesson) => {
             const isSelected = selectedLessonId === lesson.id;
             return (
@@ -34,17 +34,14 @@ export const LessonSelector: React.FC<LessonSelectorProps> = ({
                 key={lesson.id}
                 type="button"
                 onClick={() => onSelectLesson(lesson.id)}
-                className={`p-3.5 rounded-xl border text-left transition-all ${
+                className={`py-3.5 px-3 rounded-xl border text-center transition-all cursor-pointer ${
                   isSelected
-                    ? 'bg-blue-600/20 border-blue-500 text-white font-semibold'
-                    : 'bg-slate-800 border-slate-700/80 text-slate-300 hover:border-slate-600 hover:text-white'
+                    ? 'bg-blue-600 border-blue-500 text-white font-extrabold shadow-md shadow-blue-500/30 scale-102'
+                    : 'bg-slate-800 border-slate-700/80 text-slate-300 hover:border-slate-500 hover:text-white font-bold'
                 }`}
               >
-                <div className="text-xs text-blue-400 font-semibold mb-0.5">
-                  Lesson {lesson.lesson_number} • {lesson.duration_minutes} mins
-                </div>
-                <div className="text-sm font-medium leading-snug">
-                  {lesson.title}
+                <div className="text-sm tracking-wide">
+                  Lesson {lesson.lesson_number}
                 </div>
               </button>
             );
@@ -54,3 +51,4 @@ export const LessonSelector: React.FC<LessonSelectorProps> = ({
     </div>
   );
 };
+
