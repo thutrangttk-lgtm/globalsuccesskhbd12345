@@ -1,4 +1,5 @@
 import type { LessonPlan, ProcedureRow, IntegrationItem } from '../types';
+import { parseAndStandardizeIntegrations } from './integrationParser';
 
 export interface LessonGenInput {
   programCode: 'GLOBAL_SUCCESS' | 'MOVE_UP' | 'ENHANCED' | 'CUSTOM';
@@ -201,46 +202,48 @@ export function generateStructuredLessonPlan(input: LessonGenInput): LessonPlan 
     postLessonAdjustments: ''
   });
 
-  // 5. Integrations Mapping (Strict: Authoritative Master Integration Preserved)
+  // 5. Integrations Mapping (Strict: Authoritative Master Integration Preserved & 100% English)
   const finalIntegrations: IntegrationItem[] = [];
 
   if (input.integration_detail_exact) {
-    // Verified authoritative integration directly from public.curriculum_lesson_master
-    const nameExact = input.integration_name_exact || 'Educational Integration';
-    const codeExact = input.integration_code_exact || '';
-    const detailExact = input.integration_detail_exact;
+    const parsedItems = parseAndStandardizeIntegrations(
+      input.integration_name_exact,
+      input.integration_code_exact,
+      input.integration_detail_exact,
+      cleanVocab
+    );
 
-    const intItem: IntegrationItem = {
-      id: 'int_master_1',
-      type: (nameExact.toUpperCase().includes('NLS') ? 'NLS' : nameExact.toUpperCase().includes('AI') ? 'AI' : nameExact.toUpperCase().includes('CĐS') || nameExact.toUpperCase().includes('CDS') ? 'CDS' : 'CUSTOM') as any,
-      code: codeExact || undefined,
-      wording: detailExact,
-      official_code: codeExact || undefined,
-      official_wording: detailExact,
-      custom_teacher_content: detailExact,
-      isCustomLabel: true,
-      customLabelText: nameExact
-    };
-    finalIntegrations.push(intItem);
+    parsedItems.forEach((p, idx) => {
+      const intItem: IntegrationItem = {
+        id: `int_master_${idx + 1}`,
+        type: p.type as any,
+        code: p.code,
+        wording: p.wording,
+        official_code: p.code,
+        official_wording: p.wording,
+        custom_teacher_content: p.wording,
+        isCustomLabel: true,
+        customLabelText: p.fullTitle
+      };
+      finalIntegrations.push(intItem);
 
-    procedures.push({
-      id: 'proc_int_master',
-      stageName: `Production & Integration (${nameExact}${codeExact ? ` - ${codeExact}` : ''}) (5 mins)`,
-      teacherActivities: [
-        `Teacher introduces integration activity (${nameExact}): ${detailExact}`,
-        `Teacher guides pupils to apply target language (${vocabText} / ${mainPattern}) in the integration activity.`,
-        'Teacher monitors and provides constructive feedback.'
-      ],
-      pupilActivities: [
-        `Pupils engage in the integration activity (${nameExact}).`,
-        `Pupils perform task: ${detailExact}`,
-        'Pupils share their findings with the class.'
-      ],
-      expectedOutcome: `Pupils demonstrate competencies related to ${nameExact} and apply target language appropriately.`,
-      evidence: `Pupils successfully complete integration activity: ${detailExact}`,
-      integrationCode: codeExact,
-      integrationLabel: nameExact,
-      postLessonAdjustments: ''
+      procedures.push({
+        id: `proc_int_master_${idx + 1}`,
+        stageName: `Production & Integration (${p.fullTitle}) (5 mins)`,
+        teacherActivities: [
+          `Teacher introduces ${p.label} activity: ${p.wording}`,
+          `Teacher guides pupils to apply target language (${vocabText} / ${mainPattern}) in the activity.`,
+          'Teacher monitors and provides constructive feedback.'
+        ],
+        pupilActivities: [
+          p.activity
+        ],
+        expectedOutcome: p.outcome,
+        evidence: p.outcome,
+        integrationCode: p.code,
+        integrationLabel: p.fullTitle,
+        postLessonAdjustments: ''
+      });
     });
   } else if (input.availableIntegrations && input.availableIntegrations.length > 0) {
     input.availableIntegrations.forEach((req, idx) => {
