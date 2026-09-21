@@ -1,6 +1,6 @@
 import React from 'react';
 import type { LessonPlan } from '../types';
-import { exportToWord } from '../utils/wordExport';
+import { exportToWord, getExportFileName } from '../utils/wordExport';
 import { FileDown, Printer, ArrowLeft } from 'lucide-react';
 
 interface LessonPlanPreviewProps {
@@ -11,6 +11,16 @@ interface LessonPlanPreviewProps {
 export const LessonPlanPreview: React.FC<LessonPlanPreviewProps> = ({ plan, onBack }) => {
   const isGlobalSuccess = plan.teaching_program_code === 'GLOBAL_SUCCESS';
 
+  const handlePrint = () => {
+    const origTitle = document.title;
+    const baseName = getExportFileName(plan, 'pdf').replace(/\.pdf$/, '');
+    document.title = baseName;
+    window.print();
+    setTimeout(() => {
+      document.title = origTitle;
+    }, 1000);
+  };
+
   return (
     <div className="bg-slate-950 text-slate-100 min-h-screen py-8 px-4 sm:px-6">
       
@@ -19,7 +29,7 @@ export const LessonPlanPreview: React.FC<LessonPlanPreviewProps> = ({ plan, onBa
         {onBack && (
           <button
             onClick={onBack}
-            className="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold px-4 py-2 rounded-xl text-sm transition-colors flex items-center space-x-2"
+            className="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold px-4 py-2 rounded-xl text-sm transition-colors flex items-center space-x-2 cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Editor</span>
@@ -29,15 +39,15 @@ export const LessonPlanPreview: React.FC<LessonPlanPreviewProps> = ({ plan, onBa
         <div className="flex items-center space-x-3">
           <button
             onClick={() => exportToWord(plan)}
-            className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-4 py-2 rounded-xl text-sm transition-colors shadow-md flex items-center space-x-2"
+            className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-4 py-2 rounded-xl text-sm transition-colors shadow-md flex items-center space-x-2 cursor-pointer"
           >
             <FileDown className="w-4 h-4" />
             <span>XUẤT WORD</span>
           </button>
 
           <button
-            onClick={() => window.print()}
-            className="bg-purple-600 hover:bg-purple-500 text-white font-semibold px-4 py-2 rounded-xl text-sm transition-colors shadow-md flex items-center space-x-2"
+            onClick={handlePrint}
+            className="bg-purple-600 hover:bg-purple-500 text-white font-semibold px-4 py-2 rounded-xl text-sm transition-colors shadow-md flex items-center space-x-2 cursor-pointer"
           >
             <Printer className="w-4 h-4" />
             <span>PRINT / SAVE PDF</span>

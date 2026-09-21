@@ -478,6 +478,48 @@ export const exportToWord = async (plan: LessonPlan) => {
   });
 
   const blob = await Packer.toBlob(doc);
-  const sanitizedTitle = (plan.lesson_title || plan.title || 'Lesson_Plan').replace(/[^a-zA-Z0-9_-]/g, '_');
-  saveAs(blob, `KHBD_Grade${plan.grade_level}_${sanitizedTitle}.docx`);
+  const fileName = getExportFileName(plan, 'docx');
+  saveAs(blob, fileName);
 };
+
+export function getExportFileName(plan: LessonPlan, ext: 'docx' | 'pdf' = 'docx'): string {
+  const grade = plan.grade_level || 1;
+
+  let unitNum: number | null = null;
+  if (plan.unit_title) {
+    const match = plan.unit_title.match(/UNIT\s*(\d+)/i);
+    if (match) unitNum = parseInt(match[1], 10);
+  }
+  if (unitNum === null && plan.unit_id) {
+    const match = plan.unit_id.match(/(\d+)/);
+    if (match) unitNum = parseInt(match[1], 10);
+  }
+
+  let lessonNum: number | null = null;
+  if (plan.lesson_title) {
+    const match = plan.lesson_title.match(/LESSON\s*(\d+)/i) || plan.lesson_title.match(/Lesson\s*(\d+)/i);
+    if (match) lessonNum = parseInt(match[1], 10);
+  }
+  if (lessonNum === null && plan.lesson_id) {
+    const match = plan.lesson_id.match(/(\d+)/);
+    if (match) lessonNum = parseInt(match[1], 10);
+  }
+
+  if (unitNum !== null && lessonNum !== null) {
+    return `KHBD_Grade${grade}_Unit${unitNum}_Lesson${lessonNum}.${ext}`;
+  }
+
+  let labelStr = '';
+  if (plan.lesson_title) {
+    labelStr = plan.lesson_title;
+  } else if (plan.unit_title) {
+    labelStr = plan.unit_title;
+  } else if (plan.title) {
+    labelStr = plan.title;
+  } else {
+    labelStr = 'Lesson';
+  }
+
+  const sanitizedLabel = labelStr.replace(/[^a-zA-Z0-9]/g, '');
+  return `KHBD_Grade${grade}_${sanitizedLabel || 'Lesson'}.${ext}`;
+}

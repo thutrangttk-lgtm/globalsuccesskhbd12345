@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { LessonPlan, IntegrationItem, ProcedureRow } from '../types';
 import { ProceduresTable } from './ProceduresTable';
-import { exportToWord } from '../utils/wordExport';
+import { exportToWord, getExportFileName } from '../utils/wordExport';
 import { Save, Eye, FileDown, Printer, CheckCircle, Plus, Trash2, Video, Lock, RotateCcw } from 'lucide-react';
 import { INTEGRATION_LABEL_NAMES, getDefaultIntegrationSuggestion } from '../utils/lessonGenerator';
 
@@ -57,7 +57,13 @@ export const LessonPlanEditor: React.FC<LessonPlanEditorProps> = ({
   };
 
   const handlePrint = () => {
+    const origTitle = document.title;
+    const baseName = getExportFileName(plan, 'pdf').replace(/\.pdf$/, '');
+    document.title = baseName;
     window.print();
+    setTimeout(() => {
+      document.title = origTitle;
+    }, 1000);
   };
 
   const handleAddPresetIntegration = (typeKey: string) => {
