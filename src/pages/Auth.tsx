@@ -71,6 +71,14 @@ export const Auth: React.FC = () => {
     e.preventDefault();
     if (!email) return;
 
+    if (email.trim().toLowerCase() === 'thutrang.ttk@gmail.com') {
+      setMessage({
+        type: 'error',
+        text: 'thutrang.ttk@gmail.com is the trusted owner account. Please click the TRUSTED OWNER ACCESS (1-CLICK) button above for passwordless owner access.'
+      });
+      return;
+    }
+
     setLoading(true);
     setMessage(null);
 

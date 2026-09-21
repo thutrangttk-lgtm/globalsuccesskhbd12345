@@ -126,18 +126,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (sessionErr) throw sessionErr;
           return { data, error: null };
         }
+      } else {
+        const errJson = await response.json().catch(() => ({}));
+        throw new Error(errJson.error || `Server returned status ${response.status}`);
       }
     } catch (apiErr: any) {
-      console.warn('API serverless owner access endpoint failed or not served locally, falling back to passwordless OTP flow:', apiErr);
+      console.error('Owner access error:', apiErr);
+      return { error: new Error(apiErr.message || 'Server-side owner authentication failed.') };
     }
 
-    // Fallback passwordless OTP flow (NO passwords!)
-    const { error: otpErr } = await supabase.auth.signInWithOtp({
-      email: ownerEmail,
-      options: { shouldCreateUser: true }
-    });
-
-    return { error: otpErr };
+    return { error: new Error('Owner access endpoint did not return valid session tokens.') };
   };
 
   const signOut = async () => {

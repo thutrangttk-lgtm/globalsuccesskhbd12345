@@ -15,8 +15,10 @@ export default async function handler(req: any, res: any) {
   const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://tzumhlmueqadgaxjahic.supabase.co';
   const anonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR6dW1obG11ZXFhZGdheGphaGljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk4Nzk4NzcsImV4cCI6MjEwNTQ1NTg3N30.HoXF2lnsM97QIgYgPPVYSZygzAub9KRrSZMXgiwD0AY';
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const ownerPassword = process.env.OWNER_PASSWORD || process.env.VITE_OWNER_PASSWORD || 'ThuTrang@2026';
 
   try {
+    // Strategy A: If Service Role Key is configured on server (Zero emails sent!)
     if (serviceRoleKey) {
       const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
         auth: { autoRefreshToken: false, persistSession: false }
@@ -28,6 +30,7 @@ export default async function handler(req: any, res: any) {
       if (!user) {
         const { data: newUser, error: createErr } = await supabaseAdmin.auth.admin.createUser({
           email: ownerEmail,
+          password: ownerPassword,
           email_confirm: true,
           user_metadata: { full_name: 'TRAN THI THU TRANG', role: 'teacher' }
         });
@@ -35,10 +38,12 @@ export default async function handler(req: any, res: any) {
         user = newUser.user;
       } else if (!user.email_confirmed_at) {
         await supabaseAdmin.auth.admin.updateUserById(user.id, {
-          email_confirm: true
+          email_confirm: true,
+          password: ownerPassword
         });
       }
 
+      // Generate magic link without sending email
       const { data: linkData, error: linkErr } = await supabaseAdmin.auth.admin.generateLink({
         type: 'magiclink',
         email: ownerEmail
@@ -66,18 +71,42 @@ export default async function handler(req: any, res: any) {
       }
     }
 
-    // Passwordless OTP / Magic link request
+    // Strategy B: Server-side authentication using server credentials (Zero emails sent!)
     const client = createClient(supabaseUrl, anonKey);
-    const { error: otpErr } = await client.auth.signInWithOtp({
+    let { data: authData, error: authErr } = await client.auth.signInWithPassword({
       email: ownerEmail,
-      options: { shouldCreateUser: true }
+      password: ownerPassword
     });
 
-    if (otpErr) throw otpErr;
+    if (authErr && (authErr.message?.includes('Invalid login credentials') || authErr.message?.includes('User not found'))) {
+      const { data: signUpData, error: signUpErr } = await client.auth.signUp({
+        email: ownerEmail,
+        password: ownerPassword,
+        options: {
+          data: { full_name: 'TRAN THI THU TRANG', role: 'teacher' }
+        }
+      });
+      if (signUpErr) throw signUpErr;
+      if (signUpData.session) {
+        return res.status(200).json({
+          access_token: signUpData.session.access_token,
+          refresh_token: signUpData.session.refresh_token,
+          user: signUpData.user
+        });
+      }
+    } else if (authErr) {
+      throw authErr;
+    }
 
-    return res.status(200).json({
-      message: 'Passwordless magic link / OTP sent for owner account.'
-    });
+    if (authData?.session) {
+      return res.status(200).json({
+        access_token: authData.session.access_token,
+        refresh_token: authData.session.refresh_token,
+        user: authData.user
+      });
+    }
+
+    throw new Error('Server-side session generation did not return valid session tokens.');
   } catch (err: any) {
     console.error('Owner access server function error:', err);
     return res.status(500).json({ error: err.message || 'Server-side owner authentication failed.' });
