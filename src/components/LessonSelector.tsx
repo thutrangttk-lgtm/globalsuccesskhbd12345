@@ -1,8 +1,15 @@
 import React from 'react';
-import type { Lesson } from '../types';
+
+export interface SelectableLessonOption {
+  id: string;
+  lesson_number?: number | null;
+  part?: string | null;
+  display_title?: string;
+  title?: string | null;
+}
 
 interface LessonSelectorProps {
-  lessons: Lesson[];
+  lessons: SelectableLessonOption[];
   selectedLessonId: string | null;
   onSelectLesson: (lessonId: string) => void;
   loading?: boolean;
@@ -26,9 +33,22 @@ export const LessonSelector: React.FC<LessonSelectorProps> = ({
           No lessons found for this unit.
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
           {lessons.map((lesson) => {
             const isSelected = selectedLessonId === lesson.id;
+            let label = '';
+            if (lesson.lesson_number) {
+              label = `Lesson ${lesson.lesson_number}`;
+            } else if (lesson.part) {
+              label = lesson.part;
+            } else if (lesson.title) {
+              label = lesson.title;
+            } else if (lesson.display_title) {
+              label = lesson.display_title;
+            } else {
+              label = 'Lesson 1';
+            }
+
             return (
               <button
                 key={lesson.id}
@@ -41,7 +61,7 @@ export const LessonSelector: React.FC<LessonSelectorProps> = ({
                 }`}
               >
                 <div className="text-sm tracking-wide">
-                  Lesson {lesson.lesson_number}
+                  {label}
                 </div>
               </button>
             );
@@ -51,4 +71,5 @@ export const LessonSelector: React.FC<LessonSelectorProps> = ({
     </div>
   );
 };
+
 

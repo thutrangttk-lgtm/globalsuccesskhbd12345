@@ -8,9 +8,13 @@ export interface LessonGenInput {
   topic?: string;
   lessonNumber?: number;
   lessonTitle?: string;
+  phonics?: string | null;
   vocabulary: string[];
   sentencePatterns: string[];
   skills?: string[];
+  integration_name_exact?: string | null;
+  integration_code_exact?: string | null;
+  integration_detail_exact?: string | null;
   teacherInstructions?: string;
   availableIntegrations?: {
     type: 'NLS' | 'AI' | 'CDS' | 'ETHICS' | 'ATGT' | 'GDDP' | 'STEM' | 'ANQP' | 'HUMAN_RIGHTS' | 'CHILDREN_RIGHTS' | 'ENVIRONMENT' | 'WATER_PROTECTION' | 'CUSTOM';
@@ -197,10 +201,48 @@ export function generateStructuredLessonPlan(input: LessonGenInput): LessonPlan 
     postLessonAdjustments: ''
   });
 
-  // 5. Integrations Mapping (Strict: NO Orphan Integrations)
+  // 5. Integrations Mapping (Strict: Authoritative Master Integration Preserved)
   const finalIntegrations: IntegrationItem[] = [];
 
-  if (input.availableIntegrations && input.availableIntegrations.length > 0) {
+  if (input.integration_detail_exact) {
+    // Verified authoritative integration directly from public.curriculum_lesson_master
+    const nameExact = input.integration_name_exact || 'Educational Integration';
+    const codeExact = input.integration_code_exact || '';
+    const detailExact = input.integration_detail_exact;
+
+    const intItem: IntegrationItem = {
+      id: 'int_master_1',
+      type: (nameExact.toUpperCase().includes('NLS') ? 'NLS' : nameExact.toUpperCase().includes('AI') ? 'AI' : nameExact.toUpperCase().includes('CĐS') || nameExact.toUpperCase().includes('CDS') ? 'CDS' : 'CUSTOM') as any,
+      code: codeExact || undefined,
+      wording: detailExact,
+      official_code: codeExact || undefined,
+      official_wording: detailExact,
+      custom_teacher_content: detailExact,
+      isCustomLabel: true,
+      customLabelText: nameExact
+    };
+    finalIntegrations.push(intItem);
+
+    procedures.push({
+      id: 'proc_int_master',
+      stageName: `Production & Integration (${nameExact}${codeExact ? ` - ${codeExact}` : ''}) (5 mins)`,
+      teacherActivities: [
+        `Teacher introduces integration activity (${nameExact}): ${detailExact}`,
+        `Teacher guides pupils to apply target language (${vocabText} / ${mainPattern}) in the integration activity.`,
+        'Teacher monitors and provides constructive feedback.'
+      ],
+      pupilActivities: [
+        `Pupils engage in the integration activity (${nameExact}).`,
+        `Pupils perform task: ${detailExact}`,
+        'Pupils share their findings with the class.'
+      ],
+      expectedOutcome: `Pupils demonstrate competencies related to ${nameExact} and apply target language appropriately.`,
+      evidence: `Pupils successfully complete integration activity: ${detailExact}`,
+      integrationCode: codeExact,
+      integrationLabel: nameExact,
+      postLessonAdjustments: ''
+    });
+  } else if (input.availableIntegrations && input.availableIntegrations.length > 0) {
     input.availableIntegrations.forEach((req, idx) => {
       const defaultContent = getDefaultIntegrationSuggestion(req.type, vocabText, mainPattern);
       const customContent = req.customTeacherContent || defaultContent;
@@ -264,9 +306,38 @@ export function generateStructuredLessonPlan(input: LessonGenInput): LessonPlan 
   // 6. Specific 3-Part Post-Reflection
   const postReflection = `Pupils participated actively in the pair-work activity and used the target sentence pattern (${mainPattern}) confidently. Some pupils still had difficulty pronouncing the target vocabulary (${cleanVocab.slice(0, 2).join(', ') || 'new words'}). More guided pronunciation practice should be provided in the next lesson.`;
 
-  // Title formatting
-  const unitStr = input.unitTitle ? (input.unitTitle.startsWith('Unit') ? input.unitTitle : `Unit ${input.unitNumber || 1}: ${input.unitTitle}`) : `Unit ${input.unitNumber || 1}`;
-  const lessonStr = input.lessonTitle ? (input.lessonTitle.startsWith('Lesson') ? input.lessonTitle : `Lesson ${input.lessonNumber || 1} - ${input.lessonTitle}`) : `Lesson ${input.lessonNumber || 1}`;
+  // Title formatting - Strict rules: Never duplicate "UNIT X:" or "LESSON Y"
+  let unitStr = '';
+  if (input.unitTitle) {
+    const upper = input.unitTitle.trim().toUpperCase();
+    if (upper.startsWith('UNIT')) {
+      unitStr = upper;
+    } else if (input.unitNumber) {
+      unitStr = `UNIT ${input.unitNumber}: ${upper}`;
+    } else {
+      unitStr = upper;
+    }
+  } else if (input.unitNumber) {
+    unitStr = `UNIT ${input.unitNumber}`;
+  } else {
+    unitStr = 'UNIT 1';
+  }
+
+  let lessonStr = '';
+  if (input.lessonTitle) {
+    const upperLesson = input.lessonTitle.trim().toUpperCase();
+    if (upperLesson.startsWith('LESSON')) {
+      lessonStr = upperLesson;
+    } else if (input.lessonNumber) {
+      lessonStr = `LESSON ${input.lessonNumber}`;
+    } else {
+      lessonStr = upperLesson;
+    }
+  } else if (input.lessonNumber) {
+    lessonStr = `LESSON ${input.lessonNumber}`;
+  } else {
+    lessonStr = 'LESSON 1';
+  }
 
   return {
     teaching_program_code: input.programCode,
@@ -278,8 +349,8 @@ export function generateStructuredLessonPlan(input: LessonGenInput): LessonPlan 
     lesson_title: lessonStr,
     duration_minutes: 35,
     publisher: input.programCode === 'GLOBAL_SUCCESS' ? 'VIETNAM EDUCATION PUBLISHING HOUSE' : undefined,
-    vocabulary: cleanVocab.length > 0 ? cleanVocab : ['hello', 'hi', 'goodbye'],
-    sentence_patterns: cleanPatterns.length > 0 ? cleanPatterns : ['How are you? - I am fine, thank you.'],
+    vocabulary: cleanVocab,
+    sentence_patterns: cleanPatterns,
     skills: derivedSkills,
     competences_qualities_text: "Thereby contributing to the development of pupils' general competences (autonomy, communication, cooperation) and qualities (hard work, responsibility).",
     integrations: finalIntegrations,

@@ -45,6 +45,40 @@ export interface Lesson {
   duration_minutes: number;
 }
 
+export interface CurriculumLessonMaster {
+  id: string;
+  created_at?: string;
+  grade: number;
+  sequence_no: number;
+  weeks?: string | null;
+  semester?: number | null;
+  official_periods?: string | null;
+  period_count?: number | null;
+  item_type: 'UNIT' | 'STARTER' | 'FUN_TIME' | 'REVIEW' | 'REVISION' | 'INTRO' | 'TEST' | 'EXTENSION';
+  unit_number: number | null;
+  unit_title: string | null;
+  lesson_number: number | null;
+  title: string | null;
+  part: string | null;
+  display_title: string;
+  phonics: string | null;
+  vocabulary: string | null;
+  sentence_patterns: string | null;
+  integration_name_exact: string | null;
+  integration_code_exact: string | null;
+  integration_detail_exact: string | null;
+  sgk_source?: string | null;
+  khdh_source?: string | null;
+  ppct_source?: string | null;
+  validation_note?: string | null;
+  khdh_title_exact?: string | null;
+  khdh_week_month?: string | null;
+  khdh_topic?: string | null;
+  integration_verified?: string | null;
+  verification_source?: string | null;
+}
+
+
 export interface ProcedureRow {
   id: string;
   stageName: string; // Warm-up, Presentation, Practice, Production, Consolidation, Wrap-up
