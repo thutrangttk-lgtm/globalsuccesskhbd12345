@@ -290,8 +290,8 @@ export const LessonPlanEditor: React.FC<LessonPlanEditorProps> = ({
           <p>TEACHER: TRAN THI THU TRANG</p>
         </div>
 
-        {/* Top 4 Lines Header: Center Aligned & Bold */}
-        <div className="text-center pt-2 pb-4 space-y-1 font-bold border-b border-slate-200">
+        {/* Top 4 Lines Header: Center Aligned */}
+        <div className="text-center pt-2 pb-4 space-y-1 border-b border-slate-200">
           <h1 className="text-lg sm:text-xl font-bold tracking-wide text-[#1F4E78] uppercase">
             LESSON PLAN GRADE {plan.grade_level} - {plan.teaching_program_code === 'GLOBAL_SUCCESS' ? 'GLOBAL SUCCESS' : plan.teaching_program_code.replace('_', ' ')}
           </h1>
@@ -301,12 +301,15 @@ export const LessonPlanEditor: React.FC<LessonPlanEditorProps> = ({
           <p className="text-sm sm:text-base font-bold text-[#1F4E78] uppercase">
             {plan.unit_title ? (plan.unit_title.toUpperCase().startsWith('UNIT') ? plan.unit_title.toUpperCase() : `UNIT: ${plan.unit_title.toUpperCase()}`) : 'UNIT 1'}
           </p>
-          <p className="text-sm sm:text-base font-bold text-[#1F4E78] uppercase">
-            {plan.lesson_title ? (
-              plan.lesson_title.toUpperCase().startsWith('LESSON') 
-                ? (plan.lesson_title.match(/LESSON\s*\d+/i)?.[0].toUpperCase() || plan.lesson_title.toUpperCase())
-                : `LESSON ${plan.lesson_title.match(/\d+/)?.[0] || '1'}`
-            ) : 'LESSON 1'}
+          <p className="text-sm sm:text-base text-[#1F4E78]">
+            <span className="font-bold uppercase">
+              {plan.lesson_title ? (
+                plan.lesson_title.toUpperCase().startsWith('LESSON') 
+                  ? (plan.lesson_title.match(/LESSON\s*\d+/i)?.[0].toUpperCase() || plan.lesson_title.toUpperCase())
+                  : `LESSON ${plan.lesson_title.match(/\d+/)?.[0] || '1'}`
+              ) : 'LESSON 1'}
+            </span>
+            <span className="font-normal text-black capitalize ml-1.5">(Duration: {plan.duration_minutes || 35} minutes)</span>
           </p>
         </div>
 

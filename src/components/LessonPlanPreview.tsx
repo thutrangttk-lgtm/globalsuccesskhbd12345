@@ -55,23 +55,29 @@ export const LessonPlanPreview: React.FC<LessonPlanPreviewProps> = ({ plan, onBa
           <p>TEACHER: TRAN THI THU TRANG</p>
         </div>
 
-        {/* Main Title */}
-        <div className="text-center my-4">
+        {/* Main Title & Header */}
+        <div className="text-center my-4 space-y-1 border-b border-black/20 pb-4">
           <h1 className="text-[16pt] font-bold text-[#1F4E78] uppercase">
-            LESSON PLAN GRADE {plan.grade_level} - {plan.teaching_program_code.replace('_', ' ')}
+            LESSON PLAN GRADE {plan.grade_level} - {plan.teaching_program_code === 'GLOBAL_SUCCESS' ? 'GLOBAL SUCCESS' : plan.teaching_program_code.replace('_', ' ')}
           </h1>
           {(isGlobalSuccess || plan.publisher) && (
-            <p className="text-[13pt] font-bold text-black uppercase mt-1">
+            <p className="text-[13pt] font-bold text-black uppercase">
               {plan.publisher || 'VIETNAM EDUCATION PUBLISHING HOUSE'}
             </p>
           )}
-        </div>
-
-        {/* Lesson Identification */}
-        <div className="mb-6 font-bold space-y-1 border-b border-black/20 pb-4">
-          <p>{plan.unit_title ? plan.unit_title.toUpperCase() : `UNIT ${plan.unit_id || ''}`}</p>
-          <p>LESSON: {plan.lesson_title || plan.title}</p>
-          <p className="font-normal italic text-[12pt]">Duration: {plan.duration_minutes || 35} minutes</p>
+          <p className="text-[14pt] font-bold text-[#1F4E78] uppercase">
+            {plan.unit_title ? (plan.unit_title.toUpperCase().startsWith('UNIT') ? plan.unit_title.toUpperCase() : `UNIT: ${plan.unit_title.toUpperCase()}`) : 'UNIT 1'}
+          </p>
+          <p className="text-[14pt] text-[#1F4E78]">
+            <span className="font-bold uppercase">
+              {plan.lesson_title ? (
+                plan.lesson_title.toUpperCase().startsWith('LESSON') 
+                  ? (plan.lesson_title.match(/LESSON\s*\d+/i)?.[0].toUpperCase() || plan.lesson_title.toUpperCase())
+                  : `LESSON ${plan.lesson_title.match(/\d+/)?.[0] || '1'}`
+              ) : 'LESSON 1'}
+            </span>
+            <span className="font-normal text-black capitalize ml-1.5">(Duration: {plan.duration_minutes || 35} minutes)</span>
+          </p>
         </div>
 
         {/* I. OBJECTIVES */}

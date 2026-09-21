@@ -150,6 +150,13 @@ export const exportToWord = async (plan: LessonPlan) => {
           size: 28, // 14pt
           bold: true,
           color: "1F4E78"
+        }),
+        new TextRun({
+          text: ` (Duration: ${plan.duration_minutes || 35} minutes)`,
+          font: "Times New Roman",
+          size: 28, // 14pt
+          bold: false,
+          color: "000000"
         })
       ]
     }),
