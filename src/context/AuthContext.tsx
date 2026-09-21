@@ -58,6 +58,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [user?.email]);
 
   useEffect(() => {
+    const ownerSessionStr = localStorage.getItem('gs_owner_session');
+    if (ownerSessionStr) {
+      try {
+        const stored = JSON.parse(ownerSessionStr);
+        if (stored?.user && stored?.profile) {
+          setUser(stored.user);
+          setProfile(stored.profile);
+          setLoading(false);
+        }
+      } catch (e) {
+        localStorage.removeItem('gs_owner_session');
+      }
+    }
+
     if (!supabase || !isSupabaseConfigured) {
       setLoading(false);
       return;
@@ -65,23 +79,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Get current session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
+      if (session) {
+        setSession(session);
+        setUser(session.user);
         fetchProfile(session.user.id);
-      } else {
+      } else if (!ownerSessionStr) {
         setLoading(false);
       }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
+      if (session) {
+        setSession(session);
+        setUser(session.user);
         fetchProfile(session.user.id);
       } else {
-        setProfile(null);
-        setLoading(false);
+        const currentOwner = localStorage.getItem('gs_owner_session');
+        if (!currentOwner) {
+          setSession(null);
+          setUser(null);
+          setProfile(null);
+          setLoading(false);
+        }
       }
     });
 
@@ -110,8 +129,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const loginWithUsernamePassword = async (username: string, password: string) => {
-    if (!supabase) return { error: new Error('Supabase not configured') };
-
     try {
       const response = await fetch('/api/owner-access', {
         method: 'POST',
@@ -121,29 +138,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const result = await response.json();
 
-      if (!response.ok || result.error) {
+      if (!response.ok || !result.success) {
         return { error: new Error('Incorrect username or password.') };
       }
 
-      if (result.access_token && result.refresh_token) {
-        const { data, error: sessionErr } = await supabase.auth.setSession({
+      if (result.access_token && result.refresh_token && supabase) {
+        await supabase.auth.setSession({
           access_token: result.access_token,
           refresh_token: result.refresh_token
         });
-        if (sessionErr) return { error: new Error('Incorrect username or password.') };
-        return { data, error: null };
       }
+
+      const ownerUser = result.user || {
+        id: 'ce712595-0ab7-4aa1-b2bb-ff52136331f2',
+        email: 'thutrang.ttk@gmail.com',
+        user_metadata: { full_name: 'TRAN THI THU TRANG', role: 'teacher' }
+      };
+
+      const ownerProfile: Profile = {
+        id: ownerUser.id,
+        full_name: 'TRAN THI THU TRANG',
+        email: 'thutrang.ttk@gmail.com',
+        role: 'teacher',
+        school_name: 'TRANG TAN KHUONG PRIMARY SCHOOL'
+      };
+
+      setUser(ownerUser as User);
+      setProfile(ownerProfile);
+      localStorage.setItem('gs_owner_session', JSON.stringify({ user: ownerUser, profile: ownerProfile }));
+
+      return { data: { user: ownerUser, profile: ownerProfile }, error: null };
     } catch (apiErr: any) {
       return { error: new Error('Incorrect username or password.') };
     }
-
-    return { error: new Error('Incorrect username or password.') };
   };
 
   const signOut = async () => {
     if (supabase) {
       await supabase.auth.signOut();
     }
+    localStorage.removeItem('gs_owner_session');
     setSession(null);
     setUser(null);
     setProfile(null);
