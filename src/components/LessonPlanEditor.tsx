@@ -219,13 +219,13 @@ export const LessonPlanEditor: React.FC<LessonPlanEditorProps> = ({
   };
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 max-w-5xl mx-auto shadow-2xl space-y-8">
+    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-3 sm:p-6 lg:p-8 max-w-5xl mx-auto shadow-2xl space-y-6 sm:space-y-8 w-full">
       
       {/* Top Action Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-800/80 p-4 rounded-xl border border-slate-700/80 no-print">
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-800/80 p-3.5 sm:p-4 rounded-xl border border-slate-700/80 no-print">
         <div className="flex items-center space-x-2">
-          <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span className="text-sm font-bold text-white uppercase tracking-wider">Lesson Plan Editor</span>
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider">Lesson Plan Editor</span>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
@@ -281,7 +281,7 @@ export const LessonPlanEditor: React.FC<LessonPlanEditorProps> = ({
       )}
 
       {/* FIXED INSTITUTIONAL HEADER (ENGLISH) */}
-      <div className="bg-white text-black p-8 rounded-xl font-serif text-sm shadow-inner space-y-6">
+      <div className="bg-white text-black p-4 sm:p-8 rounded-xl font-serif text-xs sm:text-sm shadow-inner space-y-6">
         
         {/* Header Lines */}
         <div className="text-left font-bold text-slate-900 leading-tight">

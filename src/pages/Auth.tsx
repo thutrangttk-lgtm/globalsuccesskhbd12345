@@ -36,8 +36,8 @@ export const Auth: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col justify-center items-center px-4 py-12">
-      <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl relative overflow-hidden space-y-6">
+    <div className="min-h-screen bg-slate-950 text-white flex flex-col justify-center items-center px-4 py-8 sm:py-12">
+      <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-8 shadow-2xl relative overflow-hidden space-y-6">
         
         {/* Top Accent */}
         <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-teal-500 via-indigo-500 to-blue-500" />

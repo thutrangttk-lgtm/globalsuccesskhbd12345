@@ -7,11 +7,17 @@ import {
   Home, 
   Bell, 
   Settings as SettingsIcon, 
-  LogOut 
+  LogOut,
+  Menu,
+  BookOpen
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-export const Navbar: React.FC = () => {
+interface NavbarProps {
+  onToggleMobileMenu?: () => void;
+}
+
+export const Navbar: React.FC<NavbarProps> = ({ onToggleMobileMenu }) => {
   const { profile, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -24,72 +30,94 @@ export const Navbar: React.FC = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <header className="bg-white border-b border-[#e0f0ee] h-16 px-6 flex items-center justify-between shadow-xs shrink-0">
+    <header className="bg-white border-b border-[#e0f0ee] h-16 px-4 sm:px-6 flex items-center justify-between shadow-xs shrink-0 z-20">
       
-      {/* Quick Top Navigation Pills */}
-      <nav className="flex items-center space-x-2">
-        <Link
-          to="/"
-          className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center space-x-1.5 ${
-            isActive('/')
-              ? 'bg-[#ccfbf1] text-[#0f766e] shadow-xs'
-              : 'text-slate-600 hover:bg-slate-100 hover:text-[#0f766e]'
-          }`}
+      {/* Left side: Hamburger button on mobile/tablet (<1024px) + Quick Nav on desktop */}
+      <div className="flex items-center space-x-3">
+        {/* Mobile Hamburger Menu Button */}
+        <button
+          onClick={onToggleMobileMenu}
+          className="lg:hidden p-2 rounded-xl text-slate-600 hover:text-[#0d9488] hover:bg-slate-100 transition-colors cursor-pointer"
+          aria-label="Open navigation menu"
         >
-          <Home className="w-3.5 h-3.5 text-[#0d9488]" />
-          <span>Dashboard</span>
+          <Menu className="w-6 h-6 text-[#0d9488]" />
+        </button>
+
+        {/* Mobile Compact Branding */}
+        <Link to="/" className="flex items-center space-x-2 lg:hidden">
+          <div className="bg-[#0d9488] p-1.5 rounded-xl text-white shadow-xs">
+            <BookOpen className="w-4 h-4" />
+          </div>
+          <span className="font-extrabold text-sm tracking-tight text-[#0d9488]">
+            LESSON PLAN STUDIO
+          </span>
         </Link>
 
-        <Link
-          to="/my-plans"
-          className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center space-x-1.5 ${
-            isActive('/my-plans')
-              ? 'bg-[#ccfbf1] text-[#0f766e] shadow-xs'
-              : 'text-slate-600 hover:bg-slate-100 hover:text-[#0f766e]'
-          }`}
-        >
-          <FileText className="w-3.5 h-3.5 text-[#0d9488]" />
-          <span>My Lesson Plans</span>
-        </Link>
+        {/* Desktop Quick Top Navigation Pills */}
+        <nav className="hidden lg:flex items-center space-x-2">
+          <Link
+            to="/"
+            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center space-x-1.5 ${
+              isActive('/')
+                ? 'bg-[#ccfbf1] text-[#0f766e] shadow-xs'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-[#0f766e]'
+            }`}
+          >
+            <Home className="w-3.5 h-3.5 text-[#0d9488]" />
+            <span>Dashboard</span>
+          </Link>
 
-        <Link
-          to="/curriculum-sources"
-          className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center space-x-1.5 ${
-            isActive('/curriculum-sources')
-              ? 'bg-[#ccfbf1] text-[#0f766e] shadow-xs'
-              : 'text-slate-600 hover:bg-slate-100 hover:text-[#0f766e]'
-          }`}
-        >
-          <Database className="w-3.5 h-3.5 text-[#0d9488]" />
-          <span>Curriculum Sources</span>
-        </Link>
+          <Link
+            to="/my-plans"
+            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center space-x-1.5 ${
+              isActive('/my-plans')
+                ? 'bg-[#ccfbf1] text-[#0f766e] shadow-xs'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-[#0f766e]'
+            }`}
+          >
+            <FileText className="w-3.5 h-3.5 text-[#0d9488]" />
+            <span>My Lesson Plans</span>
+          </Link>
 
-        <Link
-          to="/teaching-resources"
-          className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center space-x-1.5 ${
-            isActive('/teaching-resources')
-              ? 'bg-[#ccfbf1] text-[#0f766e] shadow-xs'
-              : 'text-slate-600 hover:bg-slate-100 hover:text-[#0f766e]'
-          }`}
-        >
-          <FolderArchive className="w-3.5 h-3.5 text-[#0d9488]" />
-          <span>Teaching Resources</span>
-        </Link>
-      </nav>
+          <Link
+            to="/curriculum-sources"
+            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center space-x-1.5 ${
+              isActive('/curriculum-sources')
+                ? 'bg-[#ccfbf1] text-[#0f766e] shadow-xs'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-[#0f766e]'
+            }`}
+          >
+            <Database className="w-3.5 h-3.5 text-[#0d9488]" />
+            <span>Curriculum Sources</span>
+          </Link>
+
+          <Link
+            to="/teaching-resources"
+            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center space-x-1.5 ${
+              isActive('/teaching-resources')
+                ? 'bg-[#ccfbf1] text-[#0f766e] shadow-xs'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-[#0f766e]'
+            }`}
+          >
+            <FolderArchive className="w-3.5 h-3.5 text-[#0d9488]" />
+            <span>Teaching Resources</span>
+          </Link>
+        </nav>
+      </div>
 
       {/* Right User Header Profile & Quick Actions */}
-      <div className="flex items-center space-x-4">
-        <div className="text-right hidden sm:block">
-          <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+      <div className="flex items-center space-x-2 sm:space-x-4">
+        <div className="text-right hidden md:block">
+          <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider truncate max-w-[200px]">
             {profile?.school_name || 'TRANG TẤN KHƯƠNG PRIMARY SCHOOL'}
           </p>
-          <p className="text-sm font-extrabold text-slate-800">
+          <p className="text-sm font-extrabold text-slate-800 truncate max-w-[180px]">
             {profile?.full_name || 'Trần Thị Thu Trang'}
           </p>
         </div>
 
         {/* Teacher Avatar */}
-        <div className="relative w-9 h-9 rounded-full bg-teal-100 border-2 border-teal-500 overflow-hidden flex items-center justify-center shadow-xs">
+        <div className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-teal-100 border-2 border-teal-500 overflow-hidden flex items-center justify-center shadow-xs shrink-0">
           <img
             src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=150&auto=format&fit=crop"
             alt="Teacher Avatar"
@@ -98,7 +126,7 @@ export const Navbar: React.FC = () => {
         </div>
 
         {/* Notification Bell */}
-        <button className="relative p-2 text-slate-500 hover:text-teal-600 hover:bg-slate-100 rounded-full transition-colors cursor-pointer">
+        <button className="relative p-1.5 sm:p-2 text-slate-500 hover:text-teal-600 hover:bg-slate-100 rounded-full transition-colors cursor-pointer">
           <Bell className="w-4 h-4" />
           <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full animate-ping"></span>
           <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full"></span>
@@ -107,7 +135,7 @@ export const Navbar: React.FC = () => {
         {/* Settings Button */}
         <Link
           to="/settings"
-          className="p-2 text-slate-500 hover:text-teal-600 hover:bg-slate-100 rounded-full transition-colors"
+          className="p-1.5 sm:p-2 text-slate-500 hover:text-teal-600 hover:bg-slate-100 rounded-full transition-colors"
           title="Settings"
         >
           <SettingsIcon className="w-4 h-4" />
@@ -117,7 +145,7 @@ export const Navbar: React.FC = () => {
         <button
           onClick={handleSignOut}
           title="Sign Out"
-          className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-full transition-colors cursor-pointer"
+          className="p-1.5 sm:p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-full transition-colors cursor-pointer"
         >
           <LogOut className="w-4 h-4" />
         </button>
@@ -126,3 +154,4 @@ export const Navbar: React.FC = () => {
     </header>
   );
 };
+

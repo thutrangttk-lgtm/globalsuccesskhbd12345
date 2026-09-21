@@ -59,15 +59,15 @@ export const Settings: React.FC = () => {
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8">
+    <div className="max-w-3xl mx-auto space-y-6 sm:space-y-8">
       
-      <div className="flex items-center space-x-4">
-        <div className="p-3 bg-white border border-[#e0f0ee] text-[#0d9488] rounded-2xl shadow-xs">
-          <SettingsIcon className="w-7 h-7" />
+      <div className="flex items-center space-x-3 sm:space-x-4">
+        <div className="p-2.5 sm:p-3 bg-white border border-[#e0f0ee] text-[#0d9488] rounded-2xl shadow-xs shrink-0">
+          <SettingsIcon className="w-6 h-6 sm:w-7 sm:h-7" />
         </div>
         <div>
-          <h1 className="text-2xl font-black text-[#0f766e] tracking-wide">SETTINGS & PREFERENCES</h1>
-          <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">
+          <h1 className="text-xl sm:text-2xl font-black text-[#0f766e] tracking-wide">SETTINGS & PREFERENCES</h1>
+          <p className="text-[11px] sm:text-xs text-slate-500 font-semibold uppercase tracking-wider">
             Teacher Profile, Teaching Resource Preferences & Header Options
           </p>
         </div>
@@ -80,7 +80,7 @@ export const Settings: React.FC = () => {
         </div>
       )}
 
-      <form onSubmit={handleSaveSettings} className="bg-white border border-[#e0f0ee] rounded-3xl p-6 sm:p-8 space-y-6 shadow-xs">
+      <form onSubmit={handleSaveSettings} className="bg-white border border-[#e0f0ee] rounded-3xl p-4 sm:p-8 space-y-6 shadow-xs">
         
         <h3 className="text-base font-bold text-[#0f766e] border-b border-[#e2f1f0] pb-3 flex items-center space-x-2">
           <User className="w-4 h-4 text-[#0d9488]" />

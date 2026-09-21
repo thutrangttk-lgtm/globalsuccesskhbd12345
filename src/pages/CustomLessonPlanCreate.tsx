@@ -106,16 +106,16 @@ export const CustomLessonPlanCreate: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 py-10 px-4 sm:px-6">
-      <div className="max-w-4xl mx-auto space-y-8">
+    <div className="w-full text-slate-100 py-2 sm:py-4">
+      <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
         
-        <div className="flex items-center space-x-4">
-          <div className="p-3 bg-amber-600 rounded-2xl text-white shadow-lg">
-            <FilePenLine className="w-7 h-7" />
+        <div className="flex items-center space-x-3 sm:space-x-4">
+          <div className="p-2.5 sm:p-3 bg-amber-600 rounded-2xl text-white shadow-lg shrink-0">
+            <FilePenLine className="w-6 h-6 sm:w-7 sm:h-7" />
           </div>
           <div>
-            <h1 className="text-2xl font-black text-white tracking-wide">TẠO KHBD THEO THÔNG TIN NHẬP</h1>
-            <p className="text-xs text-amber-400 font-semibold uppercase tracking-wider">
+            <h1 className="text-xl sm:text-2xl font-black text-white tracking-wide">TẠO KHBD THEO THÔNG TIN NHẬP</h1>
+            <p className="text-[11px] sm:text-xs text-amber-400 font-semibold uppercase tracking-wider">
               Custom Lesson Plan • Text, Image & Mixed Input
             </p>
           </div>

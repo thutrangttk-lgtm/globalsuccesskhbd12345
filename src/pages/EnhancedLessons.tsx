@@ -99,22 +99,22 @@ export const EnhancedLessons: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 py-10 px-4 sm:px-6">
-      <div className="max-w-4xl mx-auto space-y-8">
+    <div className="w-full text-slate-100 py-2 sm:py-4">
+      <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
         
-        <div className="flex items-center space-x-4">
-          <div className="p-3 bg-emerald-600 rounded-2xl text-white shadow-lg">
-            <Sparkles className="w-7 h-7" />
+        <div className="flex items-center space-x-3 sm:space-x-4">
+          <div className="p-2.5 sm:p-3 bg-emerald-600 rounded-2xl text-white shadow-lg shrink-0">
+            <Sparkles className="w-6 h-6 sm:w-7 sm:h-7" />
           </div>
           <div>
-            <h1 className="text-2xl font-black text-white tracking-wide">BÀI DẠY TĂNG CƯỜNG</h1>
-            <p className="text-xs text-emerald-400 font-semibold uppercase tracking-wider">
+            <h1 className="text-xl sm:text-2xl font-black text-white tracking-wide">BÀI DẠY TĂNG CƯỜNG</h1>
+            <p className="text-[11px] sm:text-xs text-emerald-400 font-semibold uppercase tracking-wider">
               Enhanced English Lessons • Teacher Designed
             </p>
           </div>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-8 shadow-xl space-y-6">
           <GradeSelector selectedGrade={selectedGrade} onSelectGrade={setSelectedGrade} />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

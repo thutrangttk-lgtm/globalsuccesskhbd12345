@@ -46,7 +46,7 @@ export const ProceduresTable: React.FC<ProceduresTableProps> = ({
 
   return (
     <div className="w-full overflow-x-auto my-4 border border-slate-700 rounded-xl bg-slate-900 shadow-md">
-      <table className="w-full text-left border-collapse text-sm">
+      <table className="w-full min-w-[700px] text-left border-collapse text-sm">
         <thead>
           <tr className="bg-slate-800 text-slate-200 border-b border-slate-700 font-bold">
             <th className="p-3.5 w-[43%] border-r border-slate-700 text-center">
