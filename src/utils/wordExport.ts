@@ -159,18 +159,6 @@ export const exportToWord = async (plan: LessonPlan) => {
           color: "000000"
         })
       ]
-    }),
-    new Paragraph({
-      alignment: AlignmentType.LEFT,
-      spacing: { after: 240 },
-      children: [
-        new TextRun({
-          text: `Duration: ${plan.duration_minutes || 35} minutes`,
-          font: "Times New Roman",
-          size: 26,
-          italics: true
-        })
-      ]
     })
   ];
 
