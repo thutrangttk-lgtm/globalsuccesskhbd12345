@@ -11,6 +11,7 @@ interface AuthContextType {
   signIn: (email: string) => Promise<{ error: any }>;
   signInWithPassword: (email: string, password: string) => Promise<{ error: any; data?: any }>;
   signInAsOwner: () => Promise<{ error: any; data?: any }>;
+  loginWithUsernamePassword: (username: string, password: string) => Promise<{ error: any; data?: any }>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
   isTeacherOrAdmin: boolean;
@@ -105,37 +106,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signInAsOwner = async () => {
+    return loginWithUsernamePassword('THUTRANG', '12345Trang?');
+  };
+
+  const loginWithUsernamePassword = async (username: string, password: string) => {
     if (!supabase) return { error: new Error('Supabase not configured') };
-    const ownerEmail = 'thutrang.ttk@gmail.com';
 
     try {
       const response = await fetch('/api/owner-access', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: ownerEmail })
+        body: JSON.stringify({ username, password })
       });
 
-      if (response.ok) {
-        const result = await response.json();
-        if (result.error) throw new Error(result.error);
-        if (result.access_token && result.refresh_token) {
-          const { data, error: sessionErr } = await supabase.auth.setSession({
-            access_token: result.access_token,
-            refresh_token: result.refresh_token
-          });
-          if (sessionErr) throw sessionErr;
-          return { data, error: null };
-        }
-      } else {
-        const errJson = await response.json().catch(() => ({}));
-        throw new Error(errJson.error || `Server returned status ${response.status}`);
+      const result = await response.json();
+
+      if (!response.ok || result.error) {
+        return { error: new Error('Incorrect username or password.') };
+      }
+
+      if (result.access_token && result.refresh_token) {
+        const { data, error: sessionErr } = await supabase.auth.setSession({
+          access_token: result.access_token,
+          refresh_token: result.refresh_token
+        });
+        if (sessionErr) return { error: new Error('Incorrect username or password.') };
+        return { data, error: null };
       }
     } catch (apiErr: any) {
-      console.error('Owner access error:', apiErr);
-      return { error: new Error(apiErr.message || 'Server-side owner authentication failed.') };
+      return { error: new Error('Incorrect username or password.') };
     }
 
-    return { error: new Error('Owner access endpoint did not return valid session tokens.') };
+    return { error: new Error('Incorrect username or password.') };
   };
 
   const signOut = async () => {
@@ -151,7 +153,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isTeacherOrAdmin = profile ? (profile.role === 'teacher' || profile.role === 'admin') : true;
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, loading, signIn, signInWithPassword, signInAsOwner, signOut, isAdmin, isTeacherOrAdmin }}>
+    <AuthContext.Provider value={{ user, session, profile, loading, signIn, signInWithPassword, signInAsOwner, loginWithUsernamePassword, signOut, isAdmin, isTeacherOrAdmin }}>
       {children}
     </AuthContext.Provider>
   );
