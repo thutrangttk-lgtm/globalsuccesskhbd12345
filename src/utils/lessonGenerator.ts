@@ -11,6 +11,11 @@ export interface LessonGenInput {
   topic?: string;
   lessonNumber?: number;
   lessonTitle?: string;
+  weekNumber?: number;
+  lessonPlanLabel?: string;
+  sourcePeriods?: string;
+  pages?: string;
+  durationMinutes?: number;
   phonics?: string | null;
   vocabulary: string[];
   sentencePatterns: string[];
@@ -363,6 +368,8 @@ export function generateStructuredLessonPlan(input: LessonGenInput): LessonPlan 
     lessonStr = 'LESSON 1';
   }
 
+  const durationMinutes = input.durationMinutes || (input.programCode === 'MOVE_UP' ? 70 : 35);
+
   const rawPlan: LessonPlan = {
     teaching_program_code: input.programCode,
     grade_level: input.gradeLevel,
@@ -371,7 +378,11 @@ export function generateStructuredLessonPlan(input: LessonGenInput): LessonPlan 
     title: `Lesson Plan Grade ${input.gradeLevel} - ${programName}`,
     unit_title: unitStr,
     lesson_title: lessonStr,
-    duration_minutes: 35,
+    week_number: input.weekNumber,
+    lesson_plan_label: input.lessonPlanLabel,
+    source_periods: input.sourcePeriods,
+    pages: input.pages,
+    duration_minutes: durationMinutes,
     publisher: input.programCode === 'GLOBAL_SUCCESS' ? 'VIETNAM EDUCATION PUBLISHING HOUSE' : undefined,
     vocabulary: cleanVocab,
     sentence_patterns: cleanPatterns,

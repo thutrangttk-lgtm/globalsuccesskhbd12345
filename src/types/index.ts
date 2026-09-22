@@ -113,6 +113,26 @@ export interface IntegrationItem {
   stage?: string;
 }
 
+export interface MoveUpLessonMaster {
+  id: number;
+  grade: number;
+  week: number;
+  lesson_plan: string;
+  source_periods: string;
+  unit: string;
+  lesson_title: string;
+  pages: string;
+  vocabulary: string | null;
+  sentence_patterns: string | null;
+  phonics: string | null;
+  activities: string | null;
+  learning_outcomes: string | null;
+  integration_enabled: boolean;
+  integration_mode: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface LessonPlan {
   id?: string;
   teacher_id?: string;
@@ -123,6 +143,10 @@ export interface LessonPlan {
   title: string;
   unit_title?: string;
   lesson_title?: string;
+  week_number?: number;
+  lesson_plan_label?: string;
+  source_periods?: string;
+  pages?: string;
   duration_minutes: number;
   publisher?: string;
   vocabulary: string[];

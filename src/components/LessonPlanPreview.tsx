@@ -83,19 +83,39 @@ export const LessonPlanPreview: React.FC<LessonPlanPreviewProps> = ({ plan: rawP
               {plan.publisher || 'VIETNAM EDUCATION PUBLISHING HOUSE'}
             </p>
           )}
-          <p className="text-[14pt] font-bold text-[#1F4E78] uppercase">
-            {plan.unit_title ? (plan.unit_title.toUpperCase().startsWith('UNIT') ? plan.unit_title.toUpperCase() : `UNIT: ${plan.unit_title.toUpperCase()}`) : 'UNIT 1'}
-          </p>
-          <p className="text-[14pt] text-[#1F4E78]">
-            <span className="font-bold uppercase">
-              {plan.lesson_title ? (
-                plan.lesson_title.toUpperCase().startsWith('LESSON') 
-                  ? (plan.lesson_title.match(/LESSON\s*\d+/i)?.[0].toUpperCase() || plan.lesson_title.toUpperCase())
-                  : `LESSON ${plan.lesson_title.match(/\d+/)?.[0] || '1'}`
-              ) : 'LESSON 1'}
-            </span>
-            <span className="font-normal text-black capitalize ml-1.5">(Duration: {plan.duration_minutes || 35} minutes)</span>
-          </p>
+
+          {plan.teaching_program_code === 'MOVE_UP' ? (
+            <>
+              <p className="text-[14pt] font-bold text-[#1F4E78] uppercase">
+                {`WEEK ${plan.week_number || 1} - ${(plan.lesson_plan_label || 'LESSON PLAN ' + (plan.week_number || 1)).toUpperCase()}`}
+              </p>
+              <p className="text-[14pt] font-bold text-[#1F4E78] uppercase">
+                {(plan.unit_title || 'STARTER UNIT').replace(/ -> /g, ' → ').toUpperCase()}
+              </p>
+              <p className="text-[14pt] text-[#1F4E78]">
+                <span className="font-bold uppercase">
+                  {(plan.lesson_title || '').toUpperCase()}
+                </span>
+                <span className="font-normal text-black capitalize ml-1.5">(Duration: {plan.duration_minutes || 70} minutes)</span>
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-[14pt] font-bold text-[#1F4E78] uppercase">
+                {plan.unit_title ? (plan.unit_title.toUpperCase().startsWith('UNIT') ? plan.unit_title.toUpperCase() : `UNIT: ${plan.unit_title.toUpperCase()}`) : 'UNIT 1'}
+              </p>
+              <p className="text-[14pt] text-[#1F4E78]">
+                <span className="font-bold uppercase">
+                  {plan.lesson_title ? (
+                    plan.lesson_title.toUpperCase().startsWith('LESSON') 
+                      ? (plan.lesson_title.match(/LESSON\s*\d+/i)?.[0].toUpperCase() || plan.lesson_title.toUpperCase())
+                      : `LESSON ${plan.lesson_title.match(/\d+/)?.[0] || '1'}`
+                  ) : 'LESSON 1'}
+                </span>
+                <span className="font-normal text-black capitalize ml-1.5">(Duration: {plan.duration_minutes || 35} minutes)</span>
+              </p>
+            </>
+          )}
         </div>
 
         {/* I. OBJECTIVES */}
@@ -118,20 +138,22 @@ export const LessonPlanPreview: React.FC<LessonPlanPreviewProps> = ({ plan: rawP
               </p>
             </div>
 
-            <div>
-              <h3 className="font-bold text-[#548235] text-[13pt]">3. Integration</h3>
-              {plan.integrations && plan.integrations.length > 0 ? (
-                <ul className="list-disc list-inside mt-1 space-y-1">
-                  {plan.integrations.map((item, i) => (
-                    <li key={i}>
-                      <strong>{item.type}{item.code ? ` [${item.code}]` : ''}:</strong> {item.wording}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="mt-1">No specific integration identified for this lesson.</p>
-              )}
-            </div>
+            {((plan.integrations && plan.integrations.length > 0) || plan.teaching_program_code !== 'MOVE_UP') && (
+              <div>
+                <h3 className="font-bold text-[#548235] text-[13pt]">3. Integration</h3>
+                {plan.integrations && plan.integrations.length > 0 ? (
+                  <ul className="list-disc list-inside mt-1 space-y-1">
+                    {plan.integrations.map((item, i) => (
+                      <li key={i}>
+                        <strong>{item.type}{item.code ? ` [${item.code}]` : ''}:</strong> {item.wording}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-1">No specific integration identified for this lesson.</p>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

@@ -133,42 +133,98 @@ export const exportToWord = async (rawPlan: LessonPlan) => {
     return 'LESSON 1';
   };
 
-  // Lesson Identification (Center Aligned and Bold 4 lines header)
-  const lessonIdParagraphs = [
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 60 },
-      children: [
-        new TextRun({
-          text: formatUnitHeader(plan.unit_title),
-          font: "Times New Roman",
-          size: 28, // 14pt
-          bold: true,
-          color: "1F4E78"
-        })
-      ]
-    }),
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 200 },
-      children: [
-        new TextRun({
-          text: formatLessonHeader(plan.lesson_title, plan.lesson_id),
-          font: "Times New Roman",
-          size: 28, // 14pt
-          bold: true,
-          color: "1F4E78"
-        }),
-        new TextRun({
-          text: ` (Duration: ${plan.duration_minutes || 35} minutes)`,
-          font: "Times New Roman",
-          size: 28, // 14pt
-          bold: false,
-          color: "000000"
-        })
-      ]
-    })
-  ];
+  // Lesson Identification (Center Aligned and Bold header)
+  const lessonIdParagraphs: Paragraph[] = [];
+  if (isMoveUp) {
+    const weekStr = `WEEK ${plan.week_number || 1} - ${(plan.lesson_plan_label || 'LESSON PLAN ' + (plan.week_number || 1)).toUpperCase()}`;
+    const unitStr = (plan.unit_title || 'STARTER UNIT').replace(/ -> /g, ' → ').toUpperCase();
+    const lessonStr = (plan.lesson_title || '').toUpperCase();
+
+    lessonIdParagraphs.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 40 },
+        children: [
+          new TextRun({
+            text: weekStr,
+            font: "Times New Roman",
+            size: 28, // 14pt
+            bold: true,
+            color: "1F4E78"
+          })
+        ]
+      }),
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 40 },
+        children: [
+          new TextRun({
+            text: unitStr,
+            font: "Times New Roman",
+            size: 28, // 14pt
+            bold: true,
+            color: "1F4E78"
+          })
+        ]
+      }),
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 200 },
+        children: [
+          new TextRun({
+            text: lessonStr,
+            font: "Times New Roman",
+            size: 28, // 14pt
+            bold: true,
+            color: "1F4E78"
+          }),
+          new TextRun({
+            text: ` (Duration: ${plan.duration_minutes || 70} minutes)`,
+            font: "Times New Roman",
+            size: 28, // 14pt
+            bold: false,
+            color: "000000"
+          })
+        ]
+      })
+    );
+  } else {
+    lessonIdParagraphs.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 60 },
+        children: [
+          new TextRun({
+            text: formatUnitHeader(plan.unit_title),
+            font: "Times New Roman",
+            size: 28, // 14pt
+            bold: true,
+            color: "1F4E78"
+          })
+        ]
+      }),
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 200 },
+        children: [
+          new TextRun({
+            text: formatLessonHeader(plan.lesson_title, plan.lesson_id),
+            font: "Times New Roman",
+            size: 28, // 14pt
+            bold: true,
+            color: "1F4E78"
+          }),
+          new TextRun({
+            text: ` (Duration: ${plan.duration_minutes || 35} minutes)`,
+            font: "Times New Roman",
+            size: 28, // 14pt
+            bold: false,
+            color: "000000"
+          })
+        ]
+      })
+    );
+  }
 
   // Helper function for Heading 1 (Dark Blue 14pt Bold Uppercase)
   const createHeading1 = (text: string) =>
@@ -439,6 +495,8 @@ export const exportToWord = async (rawPlan: LessonPlan) => {
     ]
   });
 
+  const showIntegration = (plan.integrations && plan.integrations.length > 0) || !isMoveUp;
+
   // Assemble document
   const doc = new Document({
     sections: [
@@ -457,8 +515,7 @@ export const exportToWord = async (rawPlan: LessonPlan) => {
           skillsParagraph,
           competencesHeading,
           competencesBody,
-          integrationHeading,
-          ...integrationParagraphs,
+          ...(showIntegration ? [integrationHeading, ...integrationParagraphs] : []),
           materialsHeading,
           ...materialsParagraphs,
           proceduresHeading,
