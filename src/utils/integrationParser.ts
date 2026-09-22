@@ -1,3 +1,5 @@
+import { translateVietnameseIntegrationToEnglish, isVietnameseText } from './integrationTranslator';
+
 export interface ParsedIntegrationItem {
   id: string;
   type: 'NLS' | 'AI' | 'CDS' | 'ETHICS' | 'ATGT' | 'GDDP' | 'STEM' | 'ANQP' | 'HUMAN_RIGHTS' | 'CHILDREN_RIGHTS' | 'ENVIRONMENT' | 'WATER_PROTECTION' | 'CUSTOM';
@@ -34,6 +36,7 @@ export function parseAndStandardizeIntegrations(
   }
 
   const resultItems: ParsedIntegrationItem[] = [];
+  const seenWordings = new Set<string>();
 
   fineBlocks.forEach((block, idx) => {
     let type: ParsedIntegrationItem['type'] = 'CUSTOM';
@@ -99,8 +102,19 @@ export function parseAndStandardizeIntegrations(
     let activity = '';
     let outcome = '';
 
-    if (type === 'ETHICS') {
-      wording = 'Practise politeness, self-discipline, and respect for others.';
+    // If block contains specific Vietnamese sentence details after colon
+    const detailPart = block.includes(':') ? block.split(':').slice(1).join(':').trim() : block;
+
+    if (isVietnameseText(detailPart) && type === 'CUSTOM') {
+      wording = translateVietnameseIntegrationToEnglish(detailPart, { vocabulary });
+      activity = `Participate in integrated classroom activity: ${wording}`;
+      outcome = wording;
+    } else if (type === 'ETHICS') {
+      if (isVietnameseText(detailPart) && detailPart.length > 8) {
+        wording = translateVietnameseIntegrationToEnglish(detailPart, { vocabulary });
+      } else {
+        wording = 'Practise politeness, self-discipline, and respect for others.';
+      }
       activity = 'Practise polite and respectful interaction with classmates.';
       outcome = 'Show politeness and respect when interacting with classmates.';
     } else if (type === 'AI') {
@@ -137,15 +151,27 @@ export function parseAndStandardizeIntegrations(
       activity = 'Use smartphone voice recording functions for speaking practice.';
       outcome = 'Record and submit speaking assignments using digital tools.';
     } else if (type === 'ATGT') {
-      wording = 'Identify safe traffic behaviors and road safety practices during daily commute.';
+      if (isVietnameseText(detailPart) && detailPart.length > 8) {
+        wording = translateVietnameseIntegrationToEnglish(detailPart, { vocabulary });
+      } else {
+        wording = 'Identify safe traffic behaviors and road safety practices during daily commute.';
+      }
       activity = 'Discuss safe traffic behaviors and road safety practices.';
       outcome = 'Demonstrate awareness of basic traffic safety rules.';
     } else if (type === 'ENVIRONMENT') {
-      wording = 'Demonstrate environmental awareness and habits for keeping surroundings clean.';
+      if (isVietnameseText(detailPart) && detailPart.length > 8) {
+        wording = translateVietnameseIntegrationToEnglish(detailPart, { vocabulary });
+      } else {
+        wording = 'Demonstrate environmental awareness and habits for keeping surroundings clean.';
+      }
       activity = 'Discuss eco-friendly habits and environmental protection actions.';
       outcome = 'Demonstrate environmental awareness during daily school activities.';
     } else if (type === 'WATER_PROTECTION') {
-      wording = 'Discuss clean water conservation habits in daily school life.';
+      if (isVietnameseText(detailPart) && detailPart.length > 8) {
+        wording = translateVietnameseIntegrationToEnglish(detailPart, { vocabulary });
+      } else {
+        wording = 'Discuss clean water conservation habits in daily school life.';
+      }
       activity = 'Discuss clean water conservation habits.';
       outcome = 'Identify practical ways to save clean water at school.';
     } else if (type === 'GDDP') {
@@ -165,23 +191,27 @@ export function parseAndStandardizeIntegrations(
       activity = "Discuss children's right to participate and learn.";
       outcome = "Express awareness of children's rights to learn and play safely.";
     } else {
-      wording = 'Apply target language in integrated learning activities.';
+      wording = isVietnameseText(detailPart) ? translateVietnameseIntegrationToEnglish(detailPart, { vocabulary }) : 'Apply target language in integrated learning activities.';
       activity = 'Complete integrated learning activity with peers.';
       outcome = 'Demonstrate target integration competency effectively.';
     }
 
     const fullTitle = `${label}${code ? ` [${code}]` : ''}`;
+    const dedupeKey = `${type}:${wording.toLowerCase().trim()}`;
 
-    resultItems.push({
-      id: `int_master_${idx + 1}`,
-      type,
-      label,
-      code,
-      wording,
-      activity,
-      outcome,
-      fullTitle
-    });
+    if (!seenWordings.has(dedupeKey)) {
+      seenWordings.add(dedupeKey);
+      resultItems.push({
+        id: `int_master_${idx + 1}`,
+        type,
+        label,
+        code,
+        wording,
+        activity,
+        outcome,
+        fullTitle
+      });
+    }
   });
 
   return resultItems;

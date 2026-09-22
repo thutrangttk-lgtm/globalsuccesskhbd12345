@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import type { LessonPlan, IntegrationItem, ProcedureRow } from '../types';
 import { ProceduresTable } from './ProceduresTable';
 import { exportToWord, getExportFileName } from '../utils/wordExport';
-import { Save, Eye, FileDown, Printer, CheckCircle, Plus, Trash2, Video, Lock, RotateCcw } from 'lucide-react';
+import { Save, Eye, FileDown, Printer, CheckCircle, Plus, Trash2, Video, Lock, RotateCcw, Languages } from 'lucide-react';
 import { INTEGRATION_LABEL_NAMES, getDefaultIntegrationSuggestion } from '../utils/lessonGenerator';
+import { translateVietnameseIntegrationToEnglish, deduplicateIntegrations, isVietnameseText, sanitizeLessonPlanLanguage } from '../utils/integrationTranslator';
 
 interface LessonPlanEditorProps {
   plan: LessonPlan;
@@ -16,26 +17,29 @@ export const LessonPlanEditor: React.FC<LessonPlanEditorProps> = ({
   onSave,
   onPreview
 }) => {
-  const [plan, setPlan] = useState<LessonPlan>(initialPlan);
+  const [plan, setPlan] = useState<LessonPlan>(() => sanitizeLessonPlanLanguage(initialPlan));
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   const handleFieldChange = (field: keyof LessonPlan, value: any) => {
-    setPlan({ ...plan, [field]: value });
+    const updated = { ...plan, [field]: value };
+    setPlan(sanitizeLessonPlanLanguage(updated));
   };
 
   const handleArrayTextChange = (field: 'vocabulary' | 'sentence_patterns' | 'skills' | 'teaching_aids', rawText: string) => {
     const list = rawText.split('\n').map((item) => item.trim()).filter(Boolean);
-    setPlan({ ...plan, [field]: list });
+    const updated = { ...plan, [field]: list };
+    setPlan(sanitizeLessonPlanLanguage(updated));
   };
 
   const handleSave = async () => {
     if (!onSave) return;
     setSaving(true);
     setSaveSuccess(false);
+    const sanitizedToSave = sanitizeLessonPlanLanguage(plan);
     try {
-      await onSave(plan);
+      await onSave(sanitizedToSave);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err) {
@@ -47,8 +51,9 @@ export const LessonPlanEditor: React.FC<LessonPlanEditorProps> = ({
 
   const handleExportWord = async () => {
     setExporting(true);
+    const sanitizedToExport = sanitizeLessonPlanLanguage(plan);
     try {
-      await exportToWord(plan);
+      await exportToWord(sanitizedToExport);
     } catch (err) {
       console.error('Word export error:', err);
     } finally {
@@ -83,7 +88,7 @@ export const LessonPlanEditor: React.FC<LessonPlanEditorProps> = ({
       isCustomLabel: false
     };
 
-    const updatedIntegrations = [...(plan.integrations || []), newInt];
+    const updatedIntegrations = deduplicateIntegrations([...(plan.integrations || []), newInt]);
     updateIntegrationsAndProcedures(updatedIntegrations);
   };
 
@@ -99,17 +104,22 @@ export const LessonPlanEditor: React.FC<LessonPlanEditorProps> = ({
       customLabelText: 'Custom Educational Integration'
     };
 
-    const updatedIntegrations = [...(plan.integrations || []), newInt];
+    const updatedIntegrations = deduplicateIntegrations([...(plan.integrations || []), newInt]);
     updateIntegrationsAndProcedures(updatedIntegrations);
   };
 
   const handleUpdateIntegrationContent = (idx: number, newContent: string) => {
     const updatedIntegrations = [...(plan.integrations || [])];
+    const processedContent = isVietnameseText(newContent)
+      ? translateVietnameseIntegrationToEnglish(newContent, { vocabulary: plan.vocabulary, mainPattern: plan.sentence_patterns?.[0] })
+      : newContent;
+
     updatedIntegrations[idx] = {
       ...updatedIntegrations[idx],
-      custom_teacher_content: newContent
+      custom_teacher_content: processedContent,
+      wording: processedContent
     };
-    updateIntegrationsAndProcedures(updatedIntegrations);
+    updateIntegrationsAndProcedures(deduplicateIntegrations(updatedIntegrations));
   };
 
   const handleUpdateCustomLabelText = (idx: number, newLabel: string) => {
@@ -135,7 +145,8 @@ export const LessonPlanEditor: React.FC<LessonPlanEditorProps> = ({
     updateIntegrationsAndProcedures(updatedIntegrations);
   };
 
-  const updateIntegrationsAndProcedures = (updatedIntegrations: IntegrationItem[]) => {
+  const updateIntegrationsAndProcedures = (rawIntegrations: IntegrationItem[]) => {
+    const updatedIntegrations = deduplicateIntegrations(rawIntegrations);
     const vocabText = (plan.vocabulary || []).join(', ') || 'target vocabulary';
     const mainPattern = (plan.sentence_patterns || [])[0] || 'target sentence pattern';
 
@@ -143,24 +154,31 @@ export const LessonPlanEditor: React.FC<LessonPlanEditorProps> = ({
 
     const integrationProcedures: ProcedureRow[] = updatedIntegrations.map((item, idx) => {
       const labelName = item.isCustomLabel ? (item.customLabelText || 'Custom Integration') : (INTEGRATION_LABEL_NAMES[item.type] || item.type);
-      const customContent = item.custom_teacher_content || getDefaultIntegrationSuggestion(item.type, vocabText, mainPattern);
+      let customContent = item.custom_teacher_content || item.wording || getDefaultIntegrationSuggestion(item.type, vocabText, mainPattern);
+      if (isVietnameseText(customContent)) {
+        customContent = translateVietnameseIntegrationToEnglish(customContent, { vocabulary: plan.vocabulary, mainPattern });
+      }
+
       const codeStr = item.official_code || item.code || '';
+      const cleanCustomPrefix = customContent.toLowerCase().startsWith('encourage') || customContent.toLowerCase().startsWith('raise') || customContent.toLowerCase().startsWith('guide')
+        ? customContent.charAt(0).toLowerCase() + customContent.slice(1)
+        : customContent;
 
       return {
         id: `proc_int_${idx}`,
         stageName: `Production & Integration (${labelName}${codeStr ? ` - ${codeStr}` : ''}) (5 mins)`,
         teacherActivities: [
-          `Teacher introduces ${labelName} integration task: ${customContent}`,
-          `Teacher guides pupils to apply target language (${vocabText} / ${mainPattern}) in the integration task.`,
+          `Teacher introduces a ${labelName} integration activity to ${cleanCustomPrefix}`,
+          `Teacher guides pupils to apply target language (${vocabText} / ${mainPattern}) in the integration activity.`,
           'Teacher monitors and provides constructive feedback.'
         ],
         pupilActivities: [
-          `Pupils engage in ${labelName} integration activity.`,
-          `Pupils perform task: ${customContent}`,
-          'Pupils present their findings to the class.'
+          `Pupils engage in the ${labelName} integration activity.`,
+          `Pupils perform the activity: ${customContent}`,
+          'Pupils present their work to the class.'
         ],
         expectedOutcome: `Pupils demonstrate ${labelName} integration competencies and apply target language appropriately.`,
-        evidence: `Pupils successfully complete integration activity: ${customContent}`,
+        evidence: `Pupils successfully complete the integration activity: ${customContent}`,
         integrationCode: codeStr,
         integrationLabel: labelName,
         postLessonAdjustments: ''
@@ -179,11 +197,13 @@ export const LessonPlanEditor: React.FC<LessonPlanEditorProps> = ({
       finalProcedures = [...coreProcedures, ...integrationProcedures];
     }
 
-    setPlan({
+    const newPlan: LessonPlan = {
       ...plan,
       integrations: updatedIntegrations,
       procedures: finalProcedures
-    });
+    };
+
+    setPlan(sanitizeLessonPlanLanguage(newPlan));
   };
 
   const activeVideo = plan.videoMetadata || plan.procedures?.[0]?.videoMetadata;
@@ -473,14 +493,30 @@ export const LessonPlanEditor: React.FC<LessonPlanEditorProps> = ({
 
                       {/* Editable Practical Integration Content Textarea */}
                       <div>
-                        <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                          {isNLS || isAI ? 'Teacher Integration Content (Editable Practical Activity):' : 'Editable Integration Content Field:'}
-                        </label>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                            {isNLS || isAI ? 'Teacher Integration Content (Editable Practical Activity):' : 'Editable Integration Content Field:'}
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const current = item.custom_teacher_content || item.wording || '';
+                              if (current) {
+                                handleUpdateIntegrationContent(idx, current);
+                              }
+                            }}
+                            className="text-[11px] font-semibold text-teal-700 hover:text-teal-900 bg-teal-50 hover:bg-teal-100 border border-teal-200 px-2 py-0.5 rounded transition-colors inline-flex items-center space-x-1 cursor-pointer"
+                            title="Automatically translate Vietnamese integration input to professional English"
+                          >
+                            <Languages className="w-3 h-3" />
+                            <span>Translate / Refine to English</span>
+                          </button>
+                        </div>
                         <textarea
                           rows={2}
                           value={item.custom_teacher_content || item.wording || ''}
                           onChange={(e) => handleUpdateIntegrationContent(idx, e.target.value)}
-                          placeholder="Type specific classroom activity statement for this integration..."
+                          placeholder="Type specific classroom activity statement for this integration (Vietnamese input will be auto-translated to English)..."
                           className="w-full bg-white border border-slate-300 text-slate-900 rounded-lg p-2.5 text-xs font-sans focus:outline-none focus:border-teal-500 shadow-xs"
                         />
                       </div>
@@ -568,6 +604,8 @@ export const LessonPlanEditor: React.FC<LessonPlanEditorProps> = ({
             procedures={plan.procedures || []}
             onChange={(updated) => handleFieldChange('procedures', updated)}
             editable={true}
+            vocabulary={plan.vocabulary}
+            sentencePatterns={plan.sentence_patterns}
           />
         </div>
 

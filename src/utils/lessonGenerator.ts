@@ -1,5 +1,6 @@
 import type { LessonPlan, ProcedureRow, IntegrationItem } from '../types';
 import { parseAndStandardizeIntegrations } from './integrationParser';
+import { deduplicateIntegrations, sanitizeLessonPlanLanguage, translateVietnameseIntegrationToEnglish, isVietnameseText } from './integrationTranslator';
 
 export interface LessonGenInput {
   programCode: 'GLOBAL_SUCCESS' | 'MOVE_UP' | 'ENHANCED' | 'CUSTOM';
@@ -214,32 +215,43 @@ export function generateStructuredLessonPlan(input: LessonGenInput): LessonPlan 
     );
 
     parsedItems.forEach((p, idx) => {
+      let englishWording = p.wording;
+      if (isVietnameseText(englishWording)) {
+        englishWording = translateVietnameseIntegrationToEnglish(englishWording, { vocabulary: cleanVocab, mainPattern });
+      }
+
       const intItem: IntegrationItem = {
         id: `int_master_${idx + 1}`,
         type: p.type as any,
         code: p.code,
-        wording: p.wording,
+        wording: englishWording,
         official_code: p.code,
-        official_wording: p.wording,
-        custom_teacher_content: p.wording,
+        official_wording: englishWording,
+        custom_teacher_content: englishWording,
         isCustomLabel: true,
         customLabelText: p.fullTitle
       };
       finalIntegrations.push(intItem);
 
+      const cleanWordingPrefix = englishWording.toLowerCase().startsWith('encourage') || englishWording.toLowerCase().startsWith('raise') || englishWording.toLowerCase().startsWith('guide')
+        ? englishWording.charAt(0).toLowerCase() + englishWording.slice(1)
+        : englishWording;
+
       procedures.push({
         id: `proc_int_master_${idx + 1}`,
         stageName: `Production & Integration (${p.fullTitle}) (5 mins)`,
         teacherActivities: [
-          `Teacher introduces ${p.label} activity: ${p.wording}`,
+          `Teacher introduces a ${p.label} integration activity to ${cleanWordingPrefix}`,
           `Teacher guides pupils to apply target language (${vocabText} / ${mainPattern}) in the activity.`,
           'Teacher monitors and provides constructive feedback.'
         ],
         pupilActivities: [
-          p.activity
+          `Pupils engage in the ${p.label} integration activity.`,
+          `Pupils perform the activity: ${englishWording}`,
+          'Pupils present their findings to the class.'
         ],
-        expectedOutcome: p.outcome,
-        evidence: p.outcome,
+        expectedOutcome: p.outcome && !isVietnameseText(p.outcome) ? p.outcome : englishWording,
+        evidence: `Pupils successfully complete the integration activity: ${englishWording}`,
         integrationCode: p.code,
         integrationLabel: p.fullTitle,
         postLessonAdjustments: ''
@@ -248,17 +260,21 @@ export function generateStructuredLessonPlan(input: LessonGenInput): LessonPlan 
   } else if (input.availableIntegrations && input.availableIntegrations.length > 0) {
     input.availableIntegrations.forEach((req, idx) => {
       const defaultContent = getDefaultIntegrationSuggestion(req.type, vocabText, mainPattern);
-      const customContent = req.customTeacherContent || defaultContent;
+      let rawCustom = req.customTeacherContent || req.officialWording || defaultContent;
+      if (isVietnameseText(rawCustom)) {
+        rawCustom = translateVietnameseIntegrationToEnglish(rawCustom, { vocabulary: cleanVocab, mainPattern });
+      }
+
       const labelName = req.isCustomLabel ? (req.customLabelText || 'Custom Integration') : (INTEGRATION_LABEL_NAMES[req.type] || req.type);
 
       const intItem: IntegrationItem = {
         id: `int_${idx + 1}`,
         type: req.type as any,
         code: req.officialCode,
-        wording: req.officialWording || customContent,
+        wording: rawCustom,
         official_code: req.officialCode,
-        official_wording: req.officialWording,
-        custom_teacher_content: customContent,
+        official_wording: req.officialWording ? (isVietnameseText(req.officialWording) ? translateVietnameseIntegrationToEnglish(req.officialWording) : req.officialWording) : undefined,
+        custom_teacher_content: rawCustom,
         isCustomLabel: req.isCustomLabel,
         customLabelText: req.customLabelText,
         domain: req.domain
@@ -266,21 +282,25 @@ export function generateStructuredLessonPlan(input: LessonGenInput): LessonPlan 
       finalIntegrations.push(intItem);
 
       const codeStr = req.officialCode || '';
+      const cleanCustomPrefix = rawCustom.toLowerCase().startsWith('encourage') || rawCustom.toLowerCase().startsWith('raise') || rawCustom.toLowerCase().startsWith('guide')
+        ? rawCustom.charAt(0).toLowerCase() + rawCustom.slice(1)
+        : rawCustom;
+
       procedures.push({
         id: `proc_int_${idx}`,
         stageName: `Production & Integration (${labelName}${codeStr ? ` - ${codeStr}` : ''}) (5 mins)`,
         teacherActivities: [
-          `Teacher introduces ${labelName} integration task: ${customContent}`,
-          `Teacher guides pupils to apply target language (${vocabText} / ${mainPattern}) in the integration task.`,
+          `Teacher introduces a ${labelName} integration activity to ${cleanCustomPrefix}`,
+          `Teacher guides pupils to apply target language (${vocabText} / ${mainPattern}) in the integration activity.`,
           'Teacher monitors and provides constructive feedback.'
         ],
         pupilActivities: [
-          `Pupils engage in ${labelName} integration activity.`,
-          `Pupils perform task: ${customContent}`,
+          `Pupils engage in the ${labelName} integration activity.`,
+          `Pupils perform the activity: ${rawCustom}`,
           'Pupils present their findings to the class.'
         ],
         expectedOutcome: `Pupils demonstrate ${labelName} integration competencies and apply target language appropriately.`,
-        evidence: `Pupils successfully complete integration activity: ${customContent}`,
+        evidence: `Pupils successfully complete the integration activity: ${rawCustom}`,
         integrationCode: codeStr,
         integrationLabel: labelName,
         postLessonAdjustments: ''
@@ -342,7 +362,7 @@ export function generateStructuredLessonPlan(input: LessonGenInput): LessonPlan 
     lessonStr = 'LESSON 1';
   }
 
-  return {
+  const rawPlan: LessonPlan = {
     teaching_program_code: input.programCode,
     grade_level: input.gradeLevel,
     unit_id: input.unitNumber ? `unit_${input.unitNumber}` : undefined,
@@ -356,11 +376,13 @@ export function generateStructuredLessonPlan(input: LessonGenInput): LessonPlan 
     sentence_patterns: cleanPatterns,
     skills: derivedSkills,
     competences_qualities_text: "Thereby contributing to the development of pupils' general competences (autonomy, communication, cooperation) and qualities (hard work, responsibility).",
-    integrations: finalIntegrations,
+    integrations: deduplicateIntegrations(finalIntegrations),
     teaching_aids: teachingAids,
     procedures,
     post_reflection: postReflection,
     teacher_instructions: input.teacherInstructions,
     videoMetadata: activeVideoMetadata
   };
+
+  return sanitizeLessonPlanLanguage(rawPlan);
 }

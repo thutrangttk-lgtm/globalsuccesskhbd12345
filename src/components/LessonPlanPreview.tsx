@@ -2,13 +2,15 @@ import React from 'react';
 import type { LessonPlan } from '../types';
 import { exportToWord, getExportFileName } from '../utils/wordExport';
 import { FileDown, Printer, ArrowLeft } from 'lucide-react';
+import { sanitizeLessonPlanLanguage } from '../utils/integrationTranslator';
 
 interface LessonPlanPreviewProps {
   plan: LessonPlan;
   onBack?: () => void;
 }
 
-export const LessonPlanPreview: React.FC<LessonPlanPreviewProps> = ({ plan, onBack }) => {
+export const LessonPlanPreview: React.FC<LessonPlanPreviewProps> = ({ plan: rawPlan, onBack }) => {
+  const plan = sanitizeLessonPlanLanguage(rawPlan);
   const isGlobalSuccess = plan.teaching_program_code === 'GLOBAL_SUCCESS';
 
   const handlePrint = () => {

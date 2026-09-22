@@ -13,8 +13,10 @@ import {
 } from 'docx';
 import { saveAs } from 'file-saver';
 import type { LessonPlan } from '../types';
+import { sanitizeLessonPlanLanguage } from './integrationTranslator';
 
-export const exportToWord = async (plan: LessonPlan) => {
+export const exportToWord = async (rawPlan: LessonPlan) => {
+  const plan = sanitizeLessonPlanLanguage(rawPlan);
   const isGlobalSuccess = plan.teaching_program_code === 'GLOBAL_SUCCESS';
   const isMoveUp = plan.teaching_program_code === 'MOVE_UP';
   
