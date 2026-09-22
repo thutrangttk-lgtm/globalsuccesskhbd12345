@@ -83,14 +83,17 @@ export const GlobalSuccess: React.FC = () => {
               });
             }
           } else {
-            const key = `section_${r.id}`;
-            optionsMap.set(key, {
-              id: key,
-              unit_number: null,
-              title: r.title || r.display_title || r.item_type,
-              item_type: r.item_type,
-              displayLabel: r.display_title || `${r.item_type}: ${r.title || 'Lesson'}`
-            });
+            const groupTitle = r.title || r.display_title || r.item_type;
+            const key = `section_${r.item_type}_${groupTitle}`;
+            if (!optionsMap.has(key)) {
+              optionsMap.set(key, {
+                id: key,
+                unit_number: null,
+                title: groupTitle,
+                item_type: r.item_type,
+                displayLabel: groupTitle
+              });
+            }
           }
         });
 
@@ -122,31 +125,48 @@ export const GlobalSuccess: React.FC = () => {
     setNoDataError(null);
 
     let matchingRows: CurriculumLessonMaster[] = [];
+    const selectedOpt = unitOptions.find(u => u.id === selectedUnitKey);
 
     if (selectedUnitKey.startsWith('unit_')) {
       const unitNum = parseInt(selectedUnitKey.replace('unit_', ''), 10);
       matchingRows = masterRecords.filter(m => m.item_type === 'UNIT' && m.unit_number === unitNum);
+    } else if (selectedOpt) {
+      matchingRows = masterRecords.filter(m =>
+        m.item_type === selectedOpt.item_type &&
+        (m.title === selectedOpt.title || m.display_title === selectedOpt.title)
+      );
     } else if (selectedUnitKey.startsWith('section_')) {
       const itemId = selectedUnitKey.replace('section_', '');
       matchingRows = masterRecords.filter(m => m.id === itemId);
     }
 
-    const lessonOpts: SelectableLessonOption[] = matchingRows.map(m => ({
-      id: m.id,
-      lesson_number: m.lesson_number,
-      part: m.part,
-      display_title: m.display_title,
-      title: m.title
-    }));
+    const isTerminalType = selectedOpt && ['TEST', 'TEST_REVISION', 'TEST_SEMESTER'].includes(selectedOpt.item_type || '');
 
-    setLessonOptions(lessonOpts);
-    if (lessonOpts.length > 0) {
-      setSelectedLessonId(lessonOpts[0].id);
+    if (isTerminalType || (matchingRows.length === 1 && matchingRows[0].part === matchingRows[0].title)) {
+      setLessonOptions([]);
+      if (matchingRows.length > 0) {
+        setSelectedLessonId(matchingRows[0].id);
+      } else {
+        setSelectedLessonId(null);
+      }
     } else {
-      setSelectedLessonId(null);
+      const lessonOpts: SelectableLessonOption[] = matchingRows.map(m => ({
+        id: m.id,
+        lesson_number: m.lesson_number,
+        part: m.part,
+        display_title: m.display_title,
+        title: m.title
+      }));
+
+      setLessonOptions(lessonOpts);
+      if (lessonOpts.length > 0) {
+        setSelectedLessonId(lessonOpts[0].id);
+      } else {
+        setSelectedLessonId(null);
+      }
     }
     setLoadingLessons(false);
-  }, [selectedUnitKey, masterRecords]);
+  }, [selectedUnitKey, masterRecords, unitOptions]);
 
   // 3. Generate Lesson Plan
   const handleGenerate = async () => {
@@ -173,8 +193,15 @@ export const GlobalSuccess: React.FC = () => {
       .map(s => s.trim())
       .filter(Boolean);
 
-    // Fail safely if NO content exists for selected lesson
-    if (vocabList.length === 0 && patternList.length === 0 && !selectedRecord.integration_detail_exact && !selectedRecord.phonics) {
+    // Fail safely if NO content exists for selected lesson (unless it's a valid TEST or TEST_REVISION item)
+    const isSpecialTerminal = ['TEST', 'TEST_REVISION', 'TEST_SEMESTER', 'REVISION'].includes(selectedRecord.item_type || '');
+    if (
+      !isSpecialTerminal &&
+      vocabList.length === 0 &&
+      patternList.length === 0 &&
+      !selectedRecord.integration_detail_exact &&
+      !selectedRecord.phonics
+    ) {
       setNoDataError("Verified curriculum data is not available for this lesson.");
       return;
     }
@@ -317,7 +344,7 @@ export const GlobalSuccess: React.FC = () => {
                 loading={loadingUnits}
               />
 
-              {selectedUnitKey && (
+              {selectedUnitKey && lessonOptions.length > 0 && (
                 <LessonSelector
                   lessons={lessonOptions}
                   selectedLessonId={selectedLessonId}
