@@ -128,6 +128,9 @@ export interface LessonPlan {
   vocabulary: string[];
   sentence_patterns: string[];
   skills: string[]; // Listening, Speaking, Reading, Writing
+  vocab_objective?: string;
+  pattern_objective?: string;
+  skills_objective?: string;
   competences_qualities_text: string;
   integrations: IntegrationItem[];
   teaching_aids: string[];

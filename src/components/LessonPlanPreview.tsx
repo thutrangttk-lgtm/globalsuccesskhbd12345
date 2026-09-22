@@ -3,6 +3,7 @@ import type { LessonPlan } from '../types';
 import { exportToWord, getExportFileName } from '../utils/wordExport';
 import { FileDown, Printer, ArrowLeft } from 'lucide-react';
 import { sanitizeLessonPlanLanguage } from '../utils/integrationTranslator';
+import { getVocabObjective, getPatternObjective, getSkillsObjective, getCompetencesQualitiesObjective } from '../utils/objectiveGenerator';
 
 interface LessonPlanPreviewProps {
   plan: LessonPlan;
@@ -12,6 +13,11 @@ interface LessonPlanPreviewProps {
 export const LessonPlanPreview: React.FC<LessonPlanPreviewProps> = ({ plan: rawPlan, onBack }) => {
   const plan = sanitizeLessonPlanLanguage(rawPlan);
   const isGlobalSuccess = plan.teaching_program_code === 'GLOBAL_SUCCESS';
+
+  const vocabOutcome = plan.vocab_objective || getVocabObjective(plan.vocabulary, plan.grade_level);
+  const patternOutcome = plan.pattern_objective || getPatternObjective(plan.sentence_patterns, plan.grade_level);
+  const skillsOutcome = plan.skills_objective || getSkillsObjective(plan.skills, plan.vocabulary, plan.sentence_patterns);
+  const competencesOutcome = getCompetencesQualitiesObjective(plan.competences_qualities_text);
 
   const handlePrint = () => {
     const origTitle = document.title;
@@ -100,15 +106,15 @@ export const LessonPlanPreview: React.FC<LessonPlanPreviewProps> = ({ plan: rawP
           <div className="ml-4 space-y-3">
             <div>
               <h3 className="font-bold text-[#548235] text-[13pt]">1. Language Knowledge & Skills</h3>
-              <p className="mt-1"><strong className="font-bold">Vocabulary:</strong> {(plan.vocabulary || []).join(', ') || 'N/A'}</p>
-              <p><strong className="font-bold">Sentence Patterns:</strong> {(plan.sentence_patterns || []).join('; ') || 'N/A'}</p>
-              <p><strong className="font-bold">Skills:</strong> {(plan.skills || []).join(', ') || 'Listening, Speaking'}</p>
+              <p className="mt-1"><strong className="font-bold">Vocabulary:</strong> {vocabOutcome}</p>
+              <p className="mt-1"><strong className="font-bold">Sentence Patterns:</strong> {patternOutcome}</p>
+              <p className="mt-1"><strong className="font-bold">Skills:</strong> {skillsOutcome}</p>
             </div>
 
             <div>
               <h3 className="font-bold text-[#548235] text-[13pt]">2. Core / General Competences and Qualities</h3>
               <p className="mt-1">
-                {plan.competences_qualities_text || "Thereby contributing to the development of pupils' general competences and qualities (autonomy, communication, cooperation)."}
+                {competencesOutcome}
               </p>
             </div>
 

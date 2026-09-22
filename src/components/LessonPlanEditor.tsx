@@ -5,6 +5,7 @@ import { exportToWord, getExportFileName } from '../utils/wordExport';
 import { Save, Eye, FileDown, Printer, CheckCircle, Plus, Trash2, Video, Lock, RotateCcw, Languages } from 'lucide-react';
 import { INTEGRATION_LABEL_NAMES, getDefaultIntegrationSuggestion } from '../utils/lessonGenerator';
 import { translateVietnameseIntegrationToEnglish, deduplicateIntegrations, isVietnameseText, sanitizeLessonPlanLanguage } from '../utils/integrationTranslator';
+import { getVocabObjective, getPatternObjective, getSkillsObjective, getCompetencesQualitiesObjective } from '../utils/objectiveGenerator';
 
 interface LessonPlanEditorProps {
   plan: LessonPlan;
@@ -349,32 +350,53 @@ export const LessonPlanEditor: React.FC<LessonPlanEditorProps> = ({
             <h3 className="font-bold text-[#548235]">1. Language Knowledge & Skills</h3>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Vocabulary:</label>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Target Vocabulary List:</label>
               <textarea
                 rows={2}
                 value={(plan.vocabulary || []).join('\n')}
                 onChange={(e) => handleArrayTextChange('vocabulary', e.target.value)}
-                className="w-full border border-slate-300 rounded p-2 text-xs font-sans"
+                className="w-full border border-slate-300 rounded p-2 text-xs font-sans mb-1"
+              />
+              <label className="block text-[11px] font-semibold text-emerald-700 mb-1">Measurable Vocabulary Learning Outcome (Action Verbs):</label>
+              <textarea
+                rows={2}
+                value={plan.vocab_objective || getVocabObjective(plan.vocabulary, plan.grade_level)}
+                onChange={(e) => handleFieldChange('vocab_objective', e.target.value)}
+                className="w-full bg-emerald-50/50 border border-emerald-300 rounded p-2 text-xs font-sans text-emerald-950 font-medium"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Sentence Patterns:</label>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Target Sentence Patterns List:</label>
               <textarea
                 rows={2}
                 value={(plan.sentence_patterns || []).join('\n')}
                 onChange={(e) => handleArrayTextChange('sentence_patterns', e.target.value)}
-                className="w-full border border-slate-300 rounded p-2 text-xs font-sans"
+                className="w-full border border-slate-300 rounded p-2 text-xs font-sans mb-1"
+              />
+              <label className="block text-[11px] font-semibold text-emerald-700 mb-1">Measurable Sentence Pattern Learning Outcome (Action Verbs):</label>
+              <textarea
+                rows={2}
+                value={plan.pattern_objective || getPatternObjective(plan.sentence_patterns, plan.grade_level)}
+                onChange={(e) => handleFieldChange('pattern_objective', e.target.value)}
+                className="w-full bg-emerald-50/50 border border-emerald-300 rounded p-2 text-xs font-sans text-emerald-950 font-medium"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Skills:</label>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Skills Practised:</label>
               <input
                 type="text"
                 value={(plan.skills || []).join(', ')}
                 onChange={(e) => handleFieldChange('skills', e.target.value.split(',').map(s => s.trim()))}
-                className="w-full border border-slate-300 rounded p-2 text-xs font-sans"
+                className="w-full border border-slate-300 rounded p-2 text-xs font-sans mb-1"
+              />
+              <label className="block text-[11px] font-semibold text-emerald-700 mb-1">Measurable Skills Learning Outcome (Action Verbs):</label>
+              <textarea
+                rows={2}
+                value={plan.skills_objective || getSkillsObjective(plan.skills, plan.vocabulary, plan.sentence_patterns)}
+                onChange={(e) => handleFieldChange('skills_objective', e.target.value)}
+                className="w-full bg-emerald-50/50 border border-emerald-300 rounded p-2 text-xs font-sans text-emerald-950 font-medium"
               />
             </div>
           </div>
@@ -382,11 +404,12 @@ export const LessonPlanEditor: React.FC<LessonPlanEditorProps> = ({
           {/* 2. Core / General Competences and Qualities */}
           <div className="ml-4 space-y-2 mb-4">
             <h3 className="font-bold text-[#548235]">2. Core / General Competences and Qualities</h3>
+            <label className="block text-[11px] font-semibold text-emerald-700 mb-1">Measurable Competences & Qualities Outcome (Action Verbs):</label>
             <textarea
               rows={2}
-              value={plan.competences_qualities_text}
+              value={getCompetencesQualitiesObjective(plan.competences_qualities_text)}
               onChange={(e) => handleFieldChange('competences_qualities_text', e.target.value)}
-              className="w-full border border-slate-300 rounded p-2 text-xs font-sans text-slate-800"
+              className="w-full bg-emerald-50/50 border border-emerald-300 rounded p-2 text-xs font-sans text-emerald-950 font-medium"
             />
           </div>
 

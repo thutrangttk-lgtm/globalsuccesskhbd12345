@@ -1,6 +1,7 @@
 import type { LessonPlan, ProcedureRow, IntegrationItem } from '../types';
 import { parseAndStandardizeIntegrations } from './integrationParser';
 import { deduplicateIntegrations, sanitizeLessonPlanLanguage, translateVietnameseIntegrationToEnglish, isVietnameseText } from './integrationTranslator';
+import { getVocabObjective, getPatternObjective, getSkillsObjective, getCompetencesQualitiesObjective } from './objectiveGenerator';
 
 export interface LessonGenInput {
   programCode: 'GLOBAL_SUCCESS' | 'MOVE_UP' | 'ENHANCED' | 'CUSTOM';
@@ -375,7 +376,10 @@ export function generateStructuredLessonPlan(input: LessonGenInput): LessonPlan 
     vocabulary: cleanVocab,
     sentence_patterns: cleanPatterns,
     skills: derivedSkills,
-    competences_qualities_text: "Thereby contributing to the development of pupils' general competences (autonomy, communication, cooperation) and qualities (hard work, responsibility).",
+    vocab_objective: getVocabObjective(cleanVocab, input.gradeLevel),
+    pattern_objective: getPatternObjective(cleanPatterns, input.gradeLevel),
+    skills_objective: getSkillsObjective(derivedSkills, cleanVocab, cleanPatterns),
+    competences_qualities_text: getCompetencesQualitiesObjective(),
     integrations: deduplicateIntegrations(finalIntegrations),
     teaching_aids: teachingAids,
     procedures,

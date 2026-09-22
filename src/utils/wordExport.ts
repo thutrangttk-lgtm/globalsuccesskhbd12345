@@ -14,11 +14,17 @@ import {
 import { saveAs } from 'file-saver';
 import type { LessonPlan } from '../types';
 import { sanitizeLessonPlanLanguage } from './integrationTranslator';
+import { getVocabObjective, getPatternObjective, getSkillsObjective, getCompetencesQualitiesObjective } from './objectiveGenerator';
 
 export const exportToWord = async (rawPlan: LessonPlan) => {
   const plan = sanitizeLessonPlanLanguage(rawPlan);
   const isGlobalSuccess = plan.teaching_program_code === 'GLOBAL_SUCCESS';
   const isMoveUp = plan.teaching_program_code === 'MOVE_UP';
+
+  const vocabOutcome = plan.vocab_objective || getVocabObjective(plan.vocabulary, plan.grade_level);
+  const patternOutcome = plan.pattern_objective || getPatternObjective(plan.sentence_patterns, plan.grade_level);
+  const skillsOutcome = plan.skills_objective || getSkillsObjective(plan.skills, plan.vocabulary, plan.sentence_patterns);
+  const competencesOutcome = getCompetencesQualitiesObjective(plan.competences_qualities_text);
   
   let programTitle = 'GLOBAL SUCCESS';
   if (isMoveUp) programTitle = 'MOVE UP';
@@ -212,22 +218,22 @@ export const exportToWord = async (rawPlan: LessonPlan) => {
   // 1. Language Knowledge & Skills
   const langHeading = createHeading2("1. Language Knowledge & Skills");
   const vocabParagraph = createBodyParagraph(
-    plan.vocabulary.length > 0 ? plan.vocabulary.join(', ') : 'N/A',
+    vocabOutcome,
     "Vocabulary: "
   );
   const patternParagraph = createBodyParagraph(
-    plan.sentence_patterns.length > 0 ? plan.sentence_patterns.join('; ') : 'N/A',
+    patternOutcome,
     "Sentence Patterns: "
   );
   const skillsParagraph = createBodyParagraph(
-    plan.skills.length > 0 ? plan.skills.join(', ') : 'Listening, Speaking',
+    skillsOutcome,
     "Skills: "
   );
 
-  // 2. Core / General Competences and Qualities (EXACT SENTENCE)
+  // 2. Core / General Competences and Qualities
   const competencesHeading = createHeading2("2. Core / General Competences and Qualities");
   const competencesBody = createBodyParagraph(
-    plan.competences_qualities_text || "Thereby contributing to the development of pupils' general competences and qualities (autonomy, communication, cooperation)."
+    competencesOutcome
   );
 
   // 3. Integration
