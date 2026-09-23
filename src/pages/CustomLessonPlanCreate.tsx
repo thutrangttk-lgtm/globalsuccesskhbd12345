@@ -62,10 +62,11 @@ export const CustomLessonPlanCreate: React.FC = () => {
     const newPlan = generateStructuredLessonPlan({
       programCode: 'CUSTOM',
       gradeLevel: lessonInfo.gradeLevel || 3,
-      unitTitle: lessonInfo.unitTitle ? lessonInfo.unitTitle.toUpperCase() : 'UNIT CUSTOM',
+      unitTitle: lessonInfo.unitTitle || 'UNIT CUSTOM',
       lessonTitle: lessonInfo.lessonTitle || 'Lesson 1',
       vocabulary: lessonInfo.vocabulary || ['hello', 'hi'],
       sentencePatterns: lessonInfo.sentencePatterns || ['How are you? - I am fine, thank you.'],
+      activities: (lessonInfo.activities || []).join('; '),
       teacherInstructions,
       youtubeChannelUrl: youtubeUrl,
       matchedVideoTitle: matchedVideo?.title,

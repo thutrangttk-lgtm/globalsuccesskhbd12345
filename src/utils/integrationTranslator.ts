@@ -178,9 +178,8 @@ export function translateVietnameseIntegrationToEnglish(
     translatedBody = translatedBody.replace(pattern, repl);
   }
 
-  // Clean diacritics & spaces
+  // Clean spaces while preserving diacritics
   translatedBody = translatedBody
-    .replace(/[àáảãạâầấẩẫậăằắẳẵặèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ]/gi, '')
     .replace(/\s+/g, ' ')
     .trim();
 
