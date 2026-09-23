@@ -151,6 +151,11 @@ export interface LessonPlan {
   publisher?: string;
   vocabulary: string[];
   sentence_patterns: string[];
+  phonics?: string | null;
+  vocabulary_text?: string | null;
+  sentence_patterns_text?: string | null;
+  learning_outcomes_text?: string | null;
+  activities_text?: string | null;
   skills: string[]; // Listening, Speaking, Reading, Writing
   vocab_objective?: string;
   pattern_objective?: string;

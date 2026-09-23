@@ -4,6 +4,7 @@ import { exportToWord, getExportFileName } from '../utils/wordExport';
 import { FileDown, Printer, ArrowLeft } from 'lucide-react';
 import { sanitizeLessonPlanLanguage } from '../utils/integrationTranslator';
 import { getVocabObjective, getPatternObjective, getSkillsObjective, getCompetencesQualitiesObjective } from '../utils/objectiveGenerator';
+import { hasValidPhonics } from '../utils/lessonGenerator';
 
 interface LessonPlanPreviewProps {
   plan: LessonPlan;
@@ -126,9 +127,12 @@ export const LessonPlanPreview: React.FC<LessonPlanPreviewProps> = ({ plan: rawP
           <div className="ml-4 space-y-3">
             <div>
               <h3 className="font-bold text-[#548235] text-[13pt]">1. Language Knowledge & Skills</h3>
-              <p className="mt-1"><strong className="font-bold">Vocabulary:</strong> {vocabOutcome}</p>
-              <p className="mt-1"><strong className="font-bold">Sentence Patterns:</strong> {patternOutcome}</p>
-              <p className="mt-1"><strong className="font-bold">Skills:</strong> {skillsOutcome}</p>
+              <p className="mt-1"><strong className="font-bold">Vocabulary:</strong> {plan.teaching_program_code === 'MOVE_UP' ? (plan.vocabulary_text || vocabOutcome) : vocabOutcome}</p>
+              <p className="mt-1"><strong className="font-bold">Sentence Patterns:</strong> {plan.teaching_program_code === 'MOVE_UP' ? (plan.sentence_patterns_text || patternOutcome) : patternOutcome}</p>
+              {plan.teaching_program_code === 'MOVE_UP' && hasValidPhonics(plan.phonics) && (
+                <p className="mt-1"><strong className="font-bold">Phonics / Sounds & Letters:</strong> {plan.phonics}</p>
+              )}
+              <p className="mt-1"><strong className="font-bold">{plan.teaching_program_code === 'MOVE_UP' ? "Learning Outcomes:" : "Skills:"}</strong> {plan.teaching_program_code === 'MOVE_UP' ? (plan.learning_outcomes_text || skillsOutcome) : skillsOutcome}</p>
             </div>
 
             <div>
@@ -227,7 +231,7 @@ export const LessonPlanPreview: React.FC<LessonPlanPreviewProps> = ({ plan: rawP
         {/* POST-REFLECTION */}
         <div className="mb-8">
           <h2 className="text-[14pt] font-bold text-[#1F4E78] uppercase mb-2">POST-REFLECTION</h2>
-          <p>{plan.post_reflection || "The lesson was delivered successfully. Pupils were engaged in learning activities and achieved target outcomes. A short review will be conducted in the next lesson."}</p>
+          <p>{plan.post_reflection || (plan.teaching_program_code === 'MOVE_UP' ? "Teacher's reflection after the lesson: ____________________________________________________________________________________________________" : "The lesson was delivered successfully. Pupils were engaged in learning activities and achieved target outcomes. A short review will be conducted in the next lesson.")}</p>
         </div>
 
         {/* SIDE-BY-SIDE SIGNATURE SECTION */}

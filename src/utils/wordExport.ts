@@ -15,6 +15,7 @@ import { saveAs } from 'file-saver';
 import type { LessonPlan } from '../types';
 import { sanitizeLessonPlanLanguage } from './integrationTranslator';
 import { getVocabObjective, getPatternObjective, getSkillsObjective, getCompetencesQualitiesObjective } from './objectiveGenerator';
+import { hasValidPhonics } from './lessonGenerator';
 
 export const exportToWord = async (rawPlan: LessonPlan) => {
   const plan = sanitizeLessonPlanLanguage(rawPlan);
@@ -274,16 +275,19 @@ export const exportToWord = async (rawPlan: LessonPlan) => {
   // 1. Language Knowledge & Skills
   const langHeading = createHeading2("1. Language Knowledge & Skills");
   const vocabParagraph = createBodyParagraph(
-    vocabOutcome,
+    isMoveUp ? (plan.vocabulary_text || vocabOutcome) : vocabOutcome,
     "Vocabulary: "
   );
   const patternParagraph = createBodyParagraph(
-    patternOutcome,
+    isMoveUp ? (plan.sentence_patterns_text || patternOutcome) : patternOutcome,
     "Sentence Patterns: "
   );
+  const phonicsParagraph = (isMoveUp && hasValidPhonics(plan.phonics))
+    ? createBodyParagraph(plan.phonics!, "Phonics / Sounds & Letters: ")
+    : null;
   const skillsParagraph = createBodyParagraph(
-    skillsOutcome,
-    "Skills: "
+    isMoveUp ? (plan.learning_outcomes_text || skillsOutcome) : skillsOutcome,
+    isMoveUp ? "Learning Outcomes: " : "Skills: "
   );
 
   // 2. Core / General Competences and Qualities
@@ -436,7 +440,9 @@ export const exportToWord = async (rawPlan: LessonPlan) => {
   // POST-REFLECTION
   const reflectionHeading = createHeading1("POST-REFLECTION");
   const reflectionBody = createBodyParagraph(
-    plan.post_reflection || "Pupils participated actively in the pair-work activity and used the target sentence pattern confidently. Some pupils still had difficulty pronouncing the new words. More pronunciation practice should be provided next time."
+    plan.post_reflection || (isMoveUp
+      ? "Teacher's reflection after the lesson: ____________________________________________________________________________________________________"
+      : "Pupils participated actively in the pair-work activity and used the target sentence pattern confidently. Some pupils still had difficulty pronouncing the new words. More pronunciation practice should be provided next time.")
   );
 
   // FINAL SIGNATURE SECTION (Side by side)
@@ -512,6 +518,7 @@ export const exportToWord = async (rawPlan: LessonPlan) => {
           langHeading,
           vocabParagraph,
           patternParagraph,
+          ...(phonicsParagraph ? [phonicsParagraph] : []),
           skillsParagraph,
           competencesHeading,
           competencesBody,
