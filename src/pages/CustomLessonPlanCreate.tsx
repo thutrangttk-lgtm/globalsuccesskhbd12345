@@ -40,9 +40,9 @@ export const CustomLessonPlanCreate: React.FC = () => {
       gradeLevel: extracted.gradeLevel || prev.gradeLevel,
       unitTitle: extracted.unitTitle || prev.unitTitle,
       lessonTitle: extracted.lessonTitle || prev.lessonTitle,
-      vocabulary: Array.from(new Set([...(prev.vocabulary || []), ...(extracted.vocabulary || [])])),
-      sentencePatterns: Array.from(new Set([...(prev.sentencePatterns || []), ...(extracted.sentencePatterns || [])])),
-      activities: Array.from(new Set([...(prev.activities || []), ...(extracted.activities || [])]))
+      vocabulary: extracted.vocabulary && extracted.vocabulary.length > 0 ? extracted.vocabulary : prev.vocabulary,
+      sentencePatterns: extracted.sentencePatterns && extracted.sentencePatterns.length > 0 ? extracted.sentencePatterns : prev.sentencePatterns,
+      activities: extracted.activities && extracted.activities.length > 0 ? extracted.activities : prev.activities
     }));
   };
 

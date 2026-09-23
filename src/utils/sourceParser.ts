@@ -35,6 +35,7 @@ export function reconstructTokens(tokens: string[]): string {
 /**
  * Normalizes multi-spaces to single space while preserving line breaks,
  * Vietnamese diacritics, and natural punctuation spacing.
+ * Does NOT split or join words, and does NOT alter compound word spelling.
  */
 export function normalizeWhitespaceAndPunctuation(text: string): string {
   if (!text) return '';
@@ -44,7 +45,7 @@ export function normalizeWhitespaceAndPunctuation(text: string): string {
     .map(line => {
       let l = line.trim();
       if (!l) return '';
-      // Replace multiple consecutive spaces/tabs with single space
+      // Replace multiple consecutive spaces/tabs with single space (preserving single spaces between words)
       l = l.replace(/[ \t]+/g, ' ');
       // Fix space before punctuation: "word , sit" -> "word, sit"
       l = l.replace(/\s+([,.\?!;:])/g, '$1');
@@ -112,21 +113,41 @@ export const parsePastedText = (text: string): ExtractedLessonInfo => {
     lessonTitle = lessonMatch[1].trim();
   }
 
+  let currentSection: 'NONE' | 'VOCABULARY' | 'PATTERNS' | 'ACTIVITIES' = 'NONE';
+
   lines.forEach(line => {
-    if (/vocabulary|Từ vựng|words/i.test(line)) {
+    if (/^(vocabulary|Từ vựng|words|target words)/i.test(line)) {
+      currentSection = 'VOCABULARY';
       const parts = line.split(/[:\-]/);
-      if (parts.length > 1) {
+      if (parts.length > 1 && parts[1].trim()) {
         parts[1].split(/[,;]/).forEach(v => {
           const item = normalizeWhitespaceAndPunctuation(v);
           if (item) vocabularySet.add(item);
         });
       }
-    } else if (/sentence|câu|pattern|structure|mẫu câu/i.test(line)) {
+    } else if (/^(sentence|câu|pattern|structure|mẫu câu|sentence patterns)/i.test(line)) {
+      currentSection = 'PATTERNS';
       const parts = line.split(/[:\-]/);
-      if (parts.length > 1) {
+      if (parts.length > 1 && parts[1].trim()) {
         const item = normalizeWhitespaceAndPunctuation(parts[1]);
         if (item) patternsSet.add(item);
       }
+    } else if (/^(activities|hoạt động|lesson activities)/i.test(line)) {
+      currentSection = 'ACTIVITIES';
+      const parts = line.split(/[:\-]/);
+      if (parts.length > 1 && parts[1].trim()) {
+        activitiesList.push(normalizeWhitespaceAndPunctuation(parts[1]));
+      }
+    } else if (currentSection === 'VOCABULARY') {
+      line.split(/[,;]/).forEach(v => {
+        const item = normalizeWhitespaceAndPunctuation(v);
+        if (item) vocabularySet.add(item);
+      });
+    } else if (currentSection === 'PATTERNS') {
+      const item = normalizeWhitespaceAndPunctuation(line);
+      if (item) patternsSet.add(item);
+    } else if (currentSection === 'ACTIVITIES') {
+      activitiesList.push(line);
     } else if (/look, listen|listen and repeat|point and say|listen and tick|let's talk|let's sing|read and match|write/i.test(line)) {
       activitiesList.push(line);
     }
@@ -139,8 +160,11 @@ export const parsePastedText = (text: string): ExtractedLessonInfo => {
       if (/^(unit|lesson|grade|lớp)\s*\d*/i.test(line) && line.length < 25) {
         return;
       }
-      // Add all readable lines (preserving spaces, diacritics, uppercase, punctuation)
-      if (line.includes(',') || line.includes('.')) {
+      
+      // If line contains multiple items separated by comma or semicolon, split into individual vocabulary items
+      if (line.includes(',') || line.includes(';')) {
+        const parts = line.split(/[,;]/).map(p => normalizeWhitespaceAndPunctuation(p)).filter(Boolean);
+        parts.forEach(p => vocabularySet.add(p));
         patternsSet.add(line);
       } else {
         vocabularySet.add(line);
