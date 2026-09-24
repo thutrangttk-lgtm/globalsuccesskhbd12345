@@ -1,6 +1,6 @@
 import type { LessonPlan, ProcedureRow, IntegrationItem } from '../types';
 import { parseAndStandardizeIntegrations } from './integrationParser';
-import { deduplicateIntegrations, sanitizeLessonPlanLanguage, translateVietnameseIntegrationToEnglish, isVietnameseText } from './integrationTranslator';
+import { deduplicateIntegrations, sanitizeLessonPlanLanguage, translateVietnameseIntegrationToEnglish, isVietnameseText, generateModulePostLessonReflection } from './integrationTranslator';
 import { getVocabObjective, getPatternObjective, getSkillsObjective, getCompetencesQualitiesObjective } from './objectiveGenerator';
 import { selectDynamicActivity, type ActivityContextInput } from './activitySelector';
 
@@ -47,143 +47,7 @@ export interface LessonGenInput {
   matchedVideoSource?: 'teacher' | 'external';
 }
 
-export function generateModulePostLessonReflection(
-  programCode: 'MOVE_UP' | 'ENHANCED' | 'CUSTOM' | 'GLOBAL_SUCCESS',
-  vocabulary: string[] = [],
-  sentencePatterns: string[] = [],
-  skills: string[] = [],
-  unitTitle: string = '',
-  lessonTitle: string = '',
-  activities: string = ''
-): string {
-  if (programCode === 'GLOBAL_SUCCESS') {
-    const cleanVocab = vocabulary.map(v => v.trim()).filter(v => v.length > 0 && !v.includes('[DATA MISSING'));
-    const cleanPatterns = sentencePatterns.map(p => p.trim()).filter(p => p.length > 0 && !p.includes('[DATA MISSING'));
-    const mainPattern = cleanPatterns.length > 0 ? cleanPatterns[0] : 'target sentence pattern';
-    return `Pupils participated actively in the pair-work activity and used the target sentence pattern (${mainPattern}) confidently. Some pupils still had difficulty pronouncing the target vocabulary (${cleanVocab.slice(0, 2).join(', ') || 'new words'}). More guided pronunciation practice should be provided in the next lesson.`;
-  }
-
-  const cleanVocab = vocabulary.map(v => v.trim()).filter(v => v.length > 0 && !v.includes('[DATA MISSING'));
-  const cleanPatterns = sentencePatterns.map(p => p.trim()).filter(p => p.length > 0 && !p.includes('[DATA MISSING'));
-  const cleanSkills = skills.map(s => s.trim()).filter(Boolean);
-
-  let mainPatternRaw = cleanPatterns.length > 0 ? cleanPatterns[0] : '';
-  if (mainPatternRaw.includes(' - ')) {
-    mainPatternRaw = mainPatternRaw.split(' - ')[0].trim();
-  }
-  mainPatternRaw = mainPatternRaw.replace(/[.]+$/, '');
-  const mainPattern = mainPatternRaw.length > 40 ? mainPatternRaw.slice(0, 37) + '...' : mainPatternRaw;
-
-  const topVocabRaw = cleanVocab.length > 0 ? cleanVocab.slice(0, 2).join(', ') : '';
-  const topVocab = topVocabRaw.length > 35 ? topVocabRaw.slice(0, 32) + '...' : topVocabRaw;
-
-  const seedStr = `${programCode}_${unitTitle}_${lessonTitle}_${cleanVocab.join('_')}_${cleanPatterns.join('_')}`;
-
-  let hash = 0;
-  for (let i = 0; i < seedStr.length; i++) {
-    hash = (hash << 5) - hash + seedStr.charCodeAt(i);
-    hash |= 0;
-  }
-  const idx = Math.abs(hash);
-
-  // 1. Participation & Achievement
-  let part1 = '';
-  const hasSpeaking = cleanSkills.some(s => /speaking/i.test(s)) || /pair|group|role-play|speaking/i.test(activities);
-  const hasListening = cleanSkills.some(s => /listening/i.test(s)) || /listening|audio|video|sound/i.test(activities);
-  const hasReadingWriting = cleanSkills.some(s => /reading|writing/i.test(s)) || /reading|writing|text|workbook/i.test(activities);
-
-  if (hasSpeaking) {
-    const speakOptions = [
-      "Pupils participated actively in pair work and used the target language confidently.",
-      "Most pupils engaged enthusiastically in speaking activities and communicated well with their peers.",
-      "Pupils took part eagerly in pair practice and demonstrated good use of target expressions.",
-      "Pupils participated actively in group interaction and applied the target language effectively."
-    ];
-    part1 = speakOptions[idx % speakOptions.length];
-  } else if (hasListening) {
-    const listenOptions = [
-      "Pupils listened attentively and participated actively in all lesson activities.",
-      "Most pupils engaged well in the listening tasks and identified key words accurately.",
-      "Pupils followed the audio instructions carefully and responded actively during practice.",
-      "Pupils demonstrated good listening comprehension and engaged enthusiastically throughout the lesson."
-    ];
-    part1 = listenOptions[idx % listenOptions.length];
-  } else if (hasReadingWriting) {
-    const readOptions = [
-      "Pupils focused well during reading and writing tasks, achieving most lesson objectives.",
-      "Most pupils worked diligently on the written practice and completed their exercises accurately.",
-      "Pupils engaged well with the reading material and demonstrated clear understanding of the text.",
-      "Pupils completed the guided reading and writing activities with good concentration."
-    ];
-    part1 = readOptions[idx % readOptions.length];
-  } else {
-    const genOptions = [
-      "Pupils participated actively in class activities and achieved most lesson objectives.",
-      "Most pupils showed great enthusiasm during the lesson and engaged well with all tasks.",
-      "Pupils worked cooperatively during class activities and demonstrated good understanding.",
-      "Pupils engaged actively throughout the lesson and achieved target learning outcomes."
-    ];
-    part1 = genOptions[idx % genOptions.length];
-  }
-
-  // 2. Realistic Minor Difficulty
-  let part2 = '';
-  if (mainPattern) {
-    const patternOptions = [
-      `Some pupils still needed support with the sentence pattern "${mainPattern}".`,
-      `A few pupils needed extra practice using the pattern "${mainPattern}" accurately.`,
-      `Some pupils required additional guidance when forming full sentences with "${mainPattern}".`,
-      `A few pupils needed teacher assistance with sentence pattern accuracy during pair work.`
-    ];
-    part2 = patternOptions[idx % patternOptions.length];
-  } else if (topVocab) {
-    const vocabOptions = [
-      `Some pupils needed support pronouncing target words like "${topVocab}".`,
-      `A few pupils required extra guidance with remembering new words such as "${topVocab}".`,
-      `Some pupils found pronouncing "${topVocab}" slightly challenging.`,
-      `A few pupils needed additional visual prompts to master words like "${topVocab}".`
-    ];
-    part2 = vocabOptions[idx % vocabOptions.length];
-  } else {
-    const generalDiffOptions = [
-      "Some pupils required additional teacher guidance during independent practice.",
-      "A few pupils needed extra time to complete the practice exercises.",
-      "Some pupils required additional encouragement during pair interactions.",
-      "A few pupils needed extra support to recall target language structures."
-    ];
-    part2 = generalDiffOptions[idx % generalDiffOptions.length];
-  }
-
-  // 3. Short Adjustment for Next Lesson
-  let part3 = '';
-  if (mainPattern) {
-    const adjPatternOptions = [
-      "More pair practice and sentence modeling will be provided next time.",
-      "Further sentence pattern practice will be included in the next lesson.",
-      "Additional pair drills and sentence prompts will be integrated in the upcoming lesson.",
-      "More guided sentence practice will be offered next time."
-    ];
-    part3 = adjPatternOptions[idx % adjPatternOptions.length];
-  } else if (topVocab) {
-    const adjVocabOptions = [
-      "More guided pronunciation and vocabulary practice will be provided next time.",
-      "Vocabulary review and interactive card practice will be reinforced in the next lesson.",
-      "Additional pronunciation modeling will be provided in the upcoming session.",
-      "More repetition and visual practice with target words will be included next time."
-    ];
-    part3 = adjVocabOptions[idx % adjVocabOptions.length];
-  } else {
-    const adjGenOptions = [
-      "More step-by-step guidance and group practice will be provided in the next lesson.",
-      "Further guided practice and individual support will be offered next time.",
-      "Additional interactive practice will be integrated into the upcoming lesson.",
-      "More scaffolded activities will be provided in the next session to support all learners."
-    ];
-    part3 = adjGenOptions[idx % adjGenOptions.length];
-  }
-
-  return `${part1} ${part2} ${part3}`;
-}
+export { generateModulePostLessonReflection } from './integrationTranslator';
 
 export const INTEGRATION_LABEL_NAMES: Record<string, string> = {
   CDS: 'Digital Transformation',
@@ -1313,99 +1177,17 @@ export function generateStructuredLessonPlan(input: LessonGenInput): LessonPlan 
       integrations: deduplicateIntegrations(finalIntegrations),
       teaching_aids: teachingAids,
       procedures: specialProcedures,
-      post_reflection: "Teacher's reflection after the lesson: ____________________________________________________________________________________________________",
-      teacher_instructions: input.teacherInstructions,
-      videoMetadata: activeVideoMetadata
-    };
-
-    return sanitizeLessonPlanLanguage(specialPlan);
-  }
-
-  // Title formatting - Strict rules: Never duplicate "UNIT X:" or "LESSON Y"
-  // unitStr and lessonStr already calculated above
-
-
-  // Branch specifically for GLOBAL SUCCESS SPECIAL LESSONS (Review, Fun Time, Extension, Revision, Test, Test Correction)
-  if (isGlobalSuccessSpecialLesson(input)) {
-    const specialProcedures = generateGlobalSuccessSpecialProcedures(
-      input,
-      cleanVocab,
-      cleanPatterns,
-      activeVideoMetadata
-    );
-
-    const finalIntegrations: IntegrationItem[] = [];
-    if (input.integration_detail_exact) {
-      const parsedItems = parseAndStandardizeIntegrations(
-        input.integration_name_exact,
-        input.integration_code_exact,
-        input.integration_detail_exact,
-        cleanVocab
-      );
-      parsedItems.forEach((p, idx) => {
-        let englishWording = p.wording;
-        if (isVietnameseText(englishWording)) {
-          englishWording = translateVietnameseIntegrationToEnglish(englishWording, { vocabulary: cleanVocab, mainPattern });
-        }
-        finalIntegrations.push({
-          id: `int_master_${idx + 1}`,
-          type: p.type as any,
-          code: p.code,
-          wording: englishWording,
-          official_code: p.code,
-          official_wording: englishWording,
-          custom_teacher_content: englishWording,
-          isCustomLabel: true,
-          customLabelText: p.fullTitle
-        });
-      });
-    } else if (input.availableIntegrations && input.availableIntegrations.length > 0) {
-      input.availableIntegrations.forEach((req, idx) => {
-        const defaultContent = getDefaultIntegrationSuggestion(req.type, vocabText, mainPattern);
-        let rawCustom = req.customTeacherContent || req.officialWording || defaultContent;
-        if (isVietnameseText(rawCustom)) {
-          rawCustom = translateVietnameseIntegrationToEnglish(rawCustom, { vocabulary: cleanVocab, mainPattern });
-        }
-        finalIntegrations.push({
-          id: `int_${idx + 1}`,
-          type: req.type as any,
-          code: req.officialCode,
-          wording: rawCustom,
-          official_code: req.officialCode,
-          official_wording: req.officialWording ? (isVietnameseText(req.officialWording) ? translateVietnameseIntegrationToEnglish(req.officialWording) : req.officialWording) : undefined,
-          custom_teacher_content: rawCustom,
-          isCustomLabel: req.isCustomLabel,
-          customLabelText: req.customLabelText,
-          domain: req.domain
-        });
-      });
-    }
-
-    const specialPlan: LessonPlan = {
-      teaching_program_code: input.programCode,
-      grade_level: input.gradeLevel,
-      unit_id: input.unitNumber ? `unit_${input.unitNumber}` : undefined,
-      lesson_id: input.lessonNumber ? `lesson_${input.lessonNumber}` : undefined,
-      title: `Lesson Plan Grade ${input.gradeLevel} - ${programName}`,
-      unit_title: unitStr,
-      lesson_title: lessonStr,
-      week_number: input.weekNumber,
-      lesson_plan_label: input.lessonPlanLabel,
-      source_periods: input.sourcePeriods,
-      pages: input.pages,
-      duration_minutes: 35,
-      publisher: 'VIETNAM EDUCATION PUBLISHING HOUSE',
-      vocabulary: cleanVocab,
-      sentence_patterns: cleanPatterns,
-      skills: derivedSkills,
-      vocab_objective: getVocabObjective(cleanVocab, input.gradeLevel, input.itemType, input.displayTitle || input.lessonTitle || input.unitTitle),
-      pattern_objective: getPatternObjective(cleanPatterns, input.gradeLevel, input.itemType, input.displayTitle || input.lessonTitle || input.unitTitle),
-      skills_objective: getSkillsObjective(derivedSkills, cleanVocab, cleanPatterns),
-      competences_qualities_text: getCompetencesQualitiesObjective(),
-      integrations: deduplicateIntegrations(finalIntegrations),
-      teaching_aids: teachingAids,
-      procedures: specialProcedures,
-      post_reflection: "Teacher's reflection after the lesson: ____________________________________________________________________________________________________",
+      post_reflection: generateModulePostLessonReflection(
+        input.programCode,
+        cleanVocab,
+        cleanPatterns,
+        derivedSkills,
+        unitStr,
+        lessonStr,
+        input.activities || '',
+        input.itemType,
+        input.displayTitle
+      ),
       teacher_instructions: input.teacherInstructions,
       videoMetadata: activeVideoMetadata
     };
@@ -1598,7 +1380,7 @@ export function generateStructuredLessonPlan(input: LessonGenInput): LessonPlan 
     postLessonAdjustments: ''
   });
 
-  // 6. Specific 3-Part Post-Reflection
+  // 6. Specific Post-Reflection (Exactly 2 short English sentences)
   const postReflection = generateModulePostLessonReflection(
     input.programCode,
     cleanVocab,
@@ -1606,7 +1388,9 @@ export function generateStructuredLessonPlan(input: LessonGenInput): LessonPlan 
     derivedSkills,
     unitStr,
     lessonStr,
-    input.activities || ''
+    input.activities || '',
+    input.itemType,
+    input.displayTitle
   );
 
   const durationMinutes = input.durationMinutes || 35;

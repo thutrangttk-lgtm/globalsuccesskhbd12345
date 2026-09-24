@@ -113,14 +113,10 @@ export const LessonPlanEditor: React.FC<LessonPlanEditorProps> = ({
 
   const handleUpdateIntegrationContent = (idx: number, newContent: string) => {
     const updatedIntegrations = [...(plan.integrations || [])];
-    const processedContent = isVietnameseText(newContent)
-      ? translateVietnameseIntegrationToEnglish(newContent, { vocabulary: plan.vocabulary, mainPattern: plan.sentence_patterns?.[0] })
-      : newContent;
-
     updatedIntegrations[idx] = {
       ...updatedIntegrations[idx],
-      custom_teacher_content: processedContent,
-      wording: processedContent
+      custom_teacher_content: newContent,
+      wording: newContent
     };
     updateIntegrationsAndProcedures(deduplicateIntegrations(updatedIntegrations));
   };
@@ -157,13 +153,13 @@ export const LessonPlanEditor: React.FC<LessonPlanEditorProps> = ({
 
     const integrationProcedures: ProcedureRow[] = updatedIntegrations.map((item, idx) => {
       const labelName = item.isCustomLabel ? (item.customLabelText || 'Custom Integration') : (INTEGRATION_LABEL_NAMES[item.type] || item.type);
-      let customContent = item.custom_teacher_content || item.wording || getDefaultIntegrationSuggestion(item.type, vocabText, mainPattern);
-      if (isVietnameseText(customContent)) {
-        customContent = translateVietnameseIntegrationToEnglish(customContent, { vocabulary: plan.vocabulary, mainPattern });
-      }
+      const rawContent = item.custom_teacher_content || item.wording || getDefaultIntegrationSuggestion(item.type, vocabText, mainPattern);
+      const customContent = isVietnameseText(rawContent)
+        ? translateVietnameseIntegrationToEnglish(rawContent, { vocabulary: plan.vocabulary, mainPattern })
+        : rawContent;
 
       const codeStr = item.official_code || item.code || '';
-      const cleanCustomPrefix = customContent.toLowerCase().startsWith('encourage') || customContent.toLowerCase().startsWith('raise') || customContent.toLowerCase().startsWith('guide')
+      const cleanCustomPrefix = customContent.toLowerCase().startsWith('encourage') || customContent.toLowerCase().startsWith('raise') || customContent.toLowerCase().startsWith('guide') || customContent.toLowerCase().startsWith('use') || customContent.toLowerCase().startsWith('discuss')
         ? customContent.charAt(0).toLowerCase() + customContent.slice(1)
         : customContent;
 
@@ -206,7 +202,7 @@ export const LessonPlanEditor: React.FC<LessonPlanEditorProps> = ({
       procedures: finalProcedures
     };
 
-    setPlan(sanitizeLessonPlanLanguage(newPlan));
+    setPlan(newPlan);
   };
 
   const activeVideo = plan.videoMetadata || plan.procedures?.[0]?.videoMetadata;

@@ -12,7 +12,7 @@ export function isVietnameseText(text: string): boolean {
     return true;
   }
   // Check for common Vietnamese educational keywords
-  const vnKeywords = /\b(giáo dục|học sinh|bảo vệ|môi trường|gia đình|bố mẹ|cha mẹ|rèn luyện|ý thức|tiết kiệm|giao thông|vệ sinh|bạn bè|thầy cô|kỷ luật|đoàn kết|không|giúp đỡ|tôn trọng|yêu quý|thói quen|trường lớp|nước|điện|bản thân|an toàn|phù hợp|kỹ năng|thái độ|hành vi|chủ đề|lịch sự|trách nhiệm|người khác|giữ gìn|đồ dùng|tình huống|bài)\b/i;
+  const vnKeywords = /\b(giáo dục|học sinh|bảo vệ|môi trường|gia đình|bố mẹ|cha mẹ|rèn luyện|rèn|ý thức|tiết kiệm|giao thông|vệ sinh|bạn bè|thầy cô|kỷ luật|đoàn kết|không|giúp đỡ|tôn trọng|yêu quý|thói quen|trường lớp|nước|điện|bản thân|an toàn|phù hợp|kỹ năng|thái độ|hành vi|chủ đề|lịch sự|trách nhiệm|người khác|giữ gìn|đồ dùng|tình huống|bài|sử dụng|thảo luận|chấm điểm|nộp bài|gửi bài|ghi âm|trợ lý|trò chơi|tập thể|sách vở)\b/i;
   return vnKeywords.test(text);
 }
 
@@ -121,7 +121,7 @@ export function cleanEnglishFormatting(text: string, labelName?: string): string
 /**
  * Translates Vietnamese integration input into professional English primary school lesson plan language.
  * Avoids mechanical word-for-word translation, uses appropriate educational terminology,
- * and fixes duplicated colons and awkward phrasing.
+ * preserves codes and proper names, and fixes duplicated colons and awkward phrasing.
  */
 export function translateVietnameseIntegrationToEnglish(
   input: string,
@@ -131,20 +131,64 @@ export function translateVietnameseIntegrationToEnglish(
 
   let text = input.trim();
 
-  // Clean initial colons, repetitive dashes, or awkward prefixes
+  // Clean initial colons, repetitive dashes, or awkward leading symbols
   text = text.replace(/^[:\s\-]+/, '').trim();
 
-  // If text is already pure English, format capitalization, fix duplicate colons, and return
+  // Extract leading Code / Prefix (e.g. "AI 3.A1.MR1:", "NLS_3.1:", "COMP-01:", "CV 5512:", etc.)
+  let codePrefix = '';
+  const codePrefixMatch = text.match(/^((?:(?:AI|NLS|CDS|ETHICS|ATGT|GDDP|STEM|ANQP|HUMAN_RIGHTS|CHILDREN_RIGHTS|ENVIRONMENT|WATER_PROTECTION|CUSTOM|CV|QD|COMP|TC|YCCD)[\s_\-\.\/]*[A-Z0-9_\-\.\/]*|[A-Z0-9_\.\-]{2,15})\s*:\s*)/i);
+  if (codePrefixMatch) {
+    codePrefix = codePrefixMatch[1];
+    text = text.slice(codePrefix.length).trim();
+  }
+
+  // If remaining text is already pure English, format capitalization, fix colons, and return
   if (!isVietnameseText(text)) {
-    return cleanEnglishFormatting(text);
+    return cleanEnglishFormatting(codePrefix + text);
   }
 
   // Extract quoted topics like "In the backyard" if present
   const topicMatch = text.match(/chủ đề\s*["“']([^"”']+)["”']/i) || text.match(/["“']([^"”']+)["”']/);
   const topicStr = topicMatch ? topicMatch[1] : '';
 
-  // 1. Direct Pattern & Phrase Translations (High priority exact/near matches)
+  // 1. Direct Pattern & Phrase Mappings (High priority exact/near matches)
   const exactMappings: [RegExp, string | ((...args: any[]) => string)][] = [
+    [
+      /^sử dụng điện thoại thông minh để ghi âm phát âm và gửi bài cho giáo viên qua Zalo\.?$/i,
+      'Use a smartphone to record pronunciation practice and submit the recording to the teacher via Zalo.'
+    ],
+    [
+      /^sử dụng điện thoại thông minh để ghi âm phát âm và gửi bài cho giáo viên qua\s+([A-Za-z0-9_\-]+)\.?$/i,
+      (_m: string, app: string) => `Use a smartphone to record pronunciation practice and submit the recording to the teacher via ${app}.`
+    ],
+    [
+      /^thảo luận AI giúp chấm điểm phát âm từ vựng đúng\/sai\.?$/i,
+      'Discuss how AI can help provide feedback on whether vocabulary pronunciation is correct.'
+    ],
+    [
+      /^thảo luận AI giúp chấm điểm phát âm từ vựng\.?$/i,
+      'Discuss how AI can help provide feedback on vocabulary pronunciation.'
+    ],
+    [
+      /^thảo luận AI giúp chấm điểm phát âm\.?$/i,
+      'Discuss how AI can help provide feedback on pronunciation.'
+    ],
+    [
+      /^giáo dục học sinh giữ gìn sách vở\.?$/i,
+      'Encourage pupils to take good care of their books and learning materials.'
+    ],
+    [
+      /^giáo dục học sinh giữ gìn đồ dùng học tập\.?$/i,
+      'Encourage pupils to take good care of their learning materials.'
+    ],
+    [
+      /^(?:rèn|rèn luyện)\s+tinh thần đoàn kết khi tham gia trò chơi tập thể\.?$/i,
+      'Encourage teamwork and cooperation through group games.'
+    ],
+    [
+      /^sử dụng trợ lý AI hỗ trợ luyện phát âm\.?$/i,
+      'Use an AI assistant to support pronunciation practice.'
+    ],
     [
       /giáo dục thái độ,?\s*hành vi phù hợp với chủ đề\s*["“']([^"”']+)["”']\s*:\s*lịch sự,\s*có trách nhiệm,\s*tôn trọng người khác và giữ gìn đồ dùng\/môi trường liên quan đến tình huống của bài/i,
       (_m: string, topic: string) => `Encourage pupils to behave politely and responsibly, respect others, and take care of belongings and the environment in situations related to the lesson topic "${topic}".`
@@ -175,11 +219,15 @@ export function translateVietnameseIntegrationToEnglish(
 
   for (const [pattern, replacement] of exactMappings) {
     if (pattern.test(text)) {
+      let matchedResult = '';
       if (typeof replacement === 'function') {
         const match = text.match(pattern);
-        if (match) return replacement(...match);
+        if (match) matchedResult = replacement(...match);
       } else {
-        return replacement;
+        matchedResult = replacement;
+      }
+      if (matchedResult) {
+        return cleanEnglishFormatting(codePrefix + matchedResult);
       }
     }
   }
@@ -189,7 +237,16 @@ export function translateVietnameseIntegrationToEnglish(
 
   // Determine prefix verb phrase
   let prefix = '';
-  if (/^(?:giáo dục|bồi dưỡng)\s+thái\s+độ,?\s*hành\s+vi\b/i.test(result)) {
+  if (/^sử\s+dụng\b/i.test(result)) {
+    prefix = "Use ";
+    result = result.replace(/^sử\s+dụng\s*/i, '');
+  } else if (/^thảo\s+luận\s+AI\s+giúp\b/i.test(result)) {
+    prefix = "Discuss how AI can help ";
+    result = result.replace(/^thảo\s+luận\s+AI\s+giúp\s*/i, '');
+  } else if (/^thảo\s+luận\s+(?:về\s+)?/i.test(result)) {
+    prefix = "Discuss ";
+    result = result.replace(/^thảo\s+luận\s+(?:về\s+)?/i, '');
+  } else if (/^(?:giáo dục|bồi dưỡng)\s+thái\s+độ,?\s*hành\s+vi\b/i.test(result)) {
     prefix = "Encourage pupils to demonstrate positive behavior, ";
     result = result.replace(/^(?:giáo dục|bồi dưỡng)\s+thái\s+độ,?\s*hành\s+vi\s*(?:phù\s+hợp\s+với)?\s*/i, '');
   } else if (/^(?:giáo dục|bồi dưỡng)\s+học\s+sinh\s+ý\s+thức\b/i.test(result)) {
@@ -201,12 +258,15 @@ export function translateVietnameseIntegrationToEnglish(
   } else if (/^(?:giáo dục|bồi dưỡng|nhắc nhở)\s+học\s+sinh\b/i.test(result)) {
     prefix = "Encourage pupils to ";
     result = result.replace(/^(?:giáo dục|bồi dưỡng|nhắc nhở)\s+học\s+sinh\s*(?:biết|có)?\s*/i, '');
-  } else if (/^(?:rèn luyện|tạo)\s+(?:cho\s+học\s+sinh\s+)?thói\s+quen\b/i.test(result)) {
+  } else if (/^rèn\s+tinh\s+thần\s+đoàn\s+kết\s+(?:khi\s+)?/i.test(result)) {
+    prefix = "Encourage teamwork and cooperation ";
+    result = result.replace(/^rèn\s+tinh\s+thần\s+đoàn\s+kết\s+(?:khi\s+)?/i, '');
+  } else if (/^(?:rèn\s+luyện|tạo)\s+(?:cho\s+học\s+sinh\s+)?thói\s+quen\b/i.test(result)) {
     prefix = "Encourage pupils to develop habits of ";
-    result = result.replace(/^(?:rèn luyện|tạo)\s+(?:cho\s+học\s+sinh\s+)?thói\s+quen\s*/i, '');
-  } else if (/^(?:rèn luyện|bồi dưỡng)\s+cho\s+học\s+sinh\b/i.test(result)) {
-    prefix = "Encourage pupils to develop ";
-    result = result.replace(/^(?:rèn luyện|bồi dưỡng)\s+cho\s+học\s+sinh\s*/i, '');
+    result = result.replace(/^(?:rèn\s+luyện|tạo)\s+(?:cho\s+học\s+sinh\s+)?thói\s+quen\s*/i, '');
+  } else if (/^(?:rèn\s+luyện|bồi dưỡng|rèn)\s+(?:cho\s+học\s+sinh\b)?/i.test(result)) {
+    prefix = "Encourage pupils to ";
+    result = result.replace(/^(?:rèn\s+luyện|bồi dưỡng|rèn)\s+(?:cho\s+học\s+sinh\s+)?/i, '');
   } else if (/^(?:hướng dẫn|giúp)\s+học\s+sinh\b/i.test(result)) {
     prefix = "Guide pupils to ";
     result = result.replace(/^(?:hướng dẫn|giúp)\s+học\s+sinh\s*/i, '');
@@ -217,8 +277,35 @@ export function translateVietnameseIntegrationToEnglish(
     prefix = "Encourage pupils to ";
   }
 
-  // Dictionary of verb and phrase translations
+  // Dictionary of verb and phrase translations (order: longest/most specific first)
   const phraseDictionary: [RegExp, string][] = [
+    [/\bchấm điểm phát âm từ vựng đúng\/sai\b/gi, 'provide feedback on whether vocabulary pronunciation is correct'],
+    [/\bchấm điểm phát âm từ vựng\b/gi, 'provide feedback on vocabulary pronunciation'],
+    [/\bchấm điểm phát âm\b/gi, 'provide feedback on pronunciation'],
+    [/\bđiện thoại thông minh\b/gi, 'a smartphone'],
+    [/\btrợ lý AI\b/gi, 'an AI assistant'],
+    [/\bứng dụng AI\b/gi, 'an AI application'],
+    [/\bcông cụ AI\b/gi, 'an AI tool'],
+    [/\bphần mềm AI\b/gi, 'AI software'],
+    [/\bhỗ trợ luyện phát âm\b/gi, 'to support pronunciation practice'],
+    [/\bluyện phát âm\b/gi, 'pronunciation practice'],
+    [/\bđể ghi âm phát âm\b/gi, 'to record pronunciation practice'],
+    [/\bghi âm phát âm\b/gi, 'record pronunciation practice'],
+    [/\bghi âm bài nói\b/gi, 'record speaking practice'],
+    [/\bquay video\b/gi, 'record a video'],
+    [/\bvà gửi bài cho giáo viên\b/gi, 'and submit the recording to the teacher'],
+    [/\bgửi bài cho giáo viên\b/gi, 'submit the recording to the teacher'],
+    [/\bnộp bài cho giáo viên\b/gi, 'submit assignments to the teacher'],
+    [/\bnộp bài\b/gi, 'submit assignments'],
+    [/\bgiữ gìn sách vở\b/gi, 'take good care of their books and learning materials'],
+    [/\bgiữ gìn đồ dùng học tập\b/gi, 'take good care of their learning materials'],
+    [/\bsách vở\b/gi, 'books and learning materials'],
+    [/\btinh thần đoàn kết\b/gi, 'teamwork and cooperation'],
+    [/\bkhi tham gia trò chơi tập thể\b/gi, 'through group games'],
+    [/\btham gia trò chơi tập thể\b/gi, 'through group games'],
+    [/\btrò chơi tập thể\b/gi, 'group games'],
+    [/\bqua Zalo\b/gi, 'via Zalo'],
+    [/\bqua Azota\b/gi, 'via Azota'],
     [/\blịch sự,\s*có trách nhiệm\b/gi, 'behave politely and responsibly'],
     [/\blịch sự\b/gi, 'behave politely'],
     [/\bcó trách nhiệm\b/gi, 'responsibly'],
@@ -247,8 +334,9 @@ export function translateVietnameseIntegrationToEnglish(
     [/\btrung thực\b/gi, 'practice honesty'],
     [/\btự giác\b/gi, 'develop self-discipline'],
     [/\bhọc tập\b/gi, 'in their learning activities'],
-    [/\bvà\b/gi, 'and'],
-    [/\bkhông\b/gi, 'not']
+    [/(?<=^|\s)để(?=\s|$)/gi, 'to'],
+    [/(?<=^|\s)và(?=\s|$)/gi, 'and'],
+    [/(?<=^|\s)không(?=\s|$)/gi, 'not']
   ];
 
   let translatedBody = result;
@@ -268,10 +356,10 @@ export function translateVietnameseIntegrationToEnglish(
 
   // Handle unclear or short input
   if (!translatedBody || translatedBody.length < 3) {
-    return "Encourage pupils to apply positive educational values in classroom activities.";
+    return cleanEnglishFormatting(codePrefix + "Encourage pupils to apply positive educational values in classroom activities.");
   }
 
-  let finalOutput = prefix + translatedBody;
+  let finalOutput = codePrefix + prefix + translatedBody;
 
   // Final cleanup and formatting
   finalOutput = cleanEnglishFormatting(finalOutput);
@@ -431,9 +519,132 @@ export function sanitizeLessonPlanLanguage(plan: LessonPlan): LessonPlan {
     };
   });
 
+  // 3. Sanitize & Ensure Post-Reflection (Exactly 2 short English sentences)
+  let rawReflection = plan.post_reflection || '';
+  let finalReflection = rawReflection;
+  if (!rawReflection || rawReflection.includes('___')) {
+    finalReflection = generateModulePostLessonReflection(
+      plan.teaching_program_code as any,
+      plan.vocabulary,
+      plan.sentence_patterns,
+      plan.skills,
+      plan.unit_title,
+      plan.lesson_title
+    );
+  } else if (isVietnameseText(rawReflection)) {
+    finalReflection = translateVietnameseIntegrationToEnglish(rawReflection, context);
+  }
+
   return {
     ...plan,
     integrations: deduplicated,
-    procedures: sanitizedProcedures
+    procedures: sanitizedProcedures,
+    post_reflection: cleanEnglishFormatting(finalReflection)
   };
+}
+
+/**
+ * Generates concise, professional post-lesson reflections consisting of EXACTLY 2 short English sentences,
+ * tailored specifically to the lesson type (e.g. Review, Fun Time, Test, Test Correction, Starter, Extension, Move Up, Normal Unit).
+ */
+export function generateModulePostLessonReflection(
+  programCode?: 'MOVE_UP' | 'ENHANCED' | 'CUSTOM' | 'GLOBAL_SUCCESS',
+  vocabulary: string[] = [],
+  sentencePatterns: string[] = [],
+  _skills: string[] = [],
+  unitTitle: string = '',
+  lessonTitle: string = '',
+  _activities: string = '',
+  itemType?: string,
+  displayTitle?: string
+): string {
+  const combinedText = `${unitTitle} ${lessonTitle} ${itemType || ''} ${displayTitle || ''}`.toLowerCase();
+
+  const seedStr = `${programCode || 'GEN'}_${combinedText}_${vocabulary.length}_${sentencePatterns.length}`;
+  let hash = 0;
+  for (let i = 0; i < seedStr.length; i++) {
+    hash = (hash << 5) - hash + seedStr.charCodeAt(i);
+    hash |= 0;
+  }
+  const idx = Math.abs(hash);
+
+  // 1. TEST CORRECTION
+  if (/test\s*correction|chữa\s*bài|sửa\s*bài/i.test(combinedText)) {
+    const options = [
+      "Pupils identified and corrected common errors. More practice will be provided for challenging items.",
+      "Pupils reviewed their assessment errors constructively. Targeted guidance will be provided for weak areas.",
+      "Pupils analyzed their test mistakes effectively. Scaffolded practice will help address remaining difficulties."
+    ];
+    return options[idx % options.length];
+  }
+
+  // 2. TEST / TEST SEMESTER 1 / TEST SEMESTER 2 / ASSESSMENT
+  if (/test\s*semester|semester\s*test|mid-term|final\s*test|end-term|assessment|kiểm\s*tra/i.test(combinedText) || /(?:^|\b)test(?:\b|$)/i.test(combinedText)) {
+    const options = [
+      "Most pupils completed the assessment tasks seriously. Difficult areas will be reviewed in the next lesson.",
+      "Pupils demonstrated good focus during the test. Common difficulty areas will be reviewed in upcoming sessions.",
+      "Pupils completed the test exercises with good concentration. Key challenging items will be reinforced next time."
+    ];
+    return options[idx % options.length];
+  }
+
+  // 3. REVIEW / REVISION / TEST REVISION / ON TAP
+  if (/review|revision|test\s*revision|ôn\s*tập/i.test(combinedText)) {
+    const options = [
+      "Pupils recalled the reviewed language well. More practice will be provided for difficult items.",
+      "Pupils consolidated most of the reviewed language successfully. More practice will focus on areas that still need improvement.",
+      "Pupils reviewed target structures effectively. Further practice will help reinforce items requiring consolidation."
+    ];
+    return options[idx % options.length];
+  }
+
+  // 4. FUN TIME / GAMES
+  if (/fun\s*time|game|play/i.test(combinedText)) {
+    const options = [
+      "Pupils participated actively in the learning games. More practice will help them use the target language confidently.",
+      "Pupils engaged enthusiastically in game-based practice. Further interactive games will support their language confidence.",
+      "Pupils enjoyed the interactive lesson activities. Additional communicative games will reinforce their target language use."
+    ];
+    return options[idx % options.length];
+  }
+
+  // 5. GETTING ACQUAINTED / STARTER / INTRO
+  if (/getting\s*acquainted|starter|intro|introduction|làm\s*quen/i.test(combinedText)) {
+    const options = [
+      "Pupils participated actively and became familiar with the learning routines. More guided practice will support their confidence.",
+      "Pupils engaged warmly in introductory activities and classroom routines. Scaffolded practice will help build their confidence.",
+      "Pupils showed great interest in the starter routines. Continued guided practice will support their classroom adaptation."
+    ];
+    return options[idx % options.length];
+  }
+
+  // 6. EXTENSION / SUPPLEMENTARY
+  if (/extension|supplementary|bổ\s*trợ|mở\s*rộng/i.test(combinedText)) {
+    const options = [
+      "Pupils applied the learnt language actively in the extension activities. Further practice will help strengthen their language use.",
+      "Pupils demonstrated good creativity in extension tasks. Scaffolded practice will support deeper language application.",
+      "Pupils completed the enrichment tasks enthusiastically. Additional practice will consolidate their expanded language use."
+    ];
+    return options[idx % options.length];
+  }
+
+  // 7. MOVE UP
+  if (programCode === 'MOVE_UP' || /move\s*up/i.test(combinedText)) {
+    const options = [
+      "Pupils engaged actively in the combined skill activities. Further practice will help reinforce target language accuracy.",
+      "Pupils participated enthusiastically in Move Up tasks. More guided practice will strengthen their speaking confidence.",
+      "Pupils completed the integrated lesson tasks effectively. Continued pair practice will help build fluency and accuracy."
+    ];
+    return options[idx % options.length];
+  }
+
+  // 8. NORMAL UNIT LESSONS / CUSTOM / GENERAL
+  const generalOptions = [
+    "Pupils participated actively in class activities and achieved target outcomes. More guided practice will be provided in the next lesson.",
+    "Most pupils engaged enthusiastically in the lesson tasks and pair practice. Further practice will help consolidate target language use.",
+    "Pupils took part eagerly in classroom activities and used target structures well. Additional practice will support pupils needing extra help.",
+    "Pupils worked cooperatively during speaking and listening tasks. Scaffolded practice will be offered next time to reinforce learning."
+  ];
+
+  return generalOptions[idx % generalOptions.length];
 }
