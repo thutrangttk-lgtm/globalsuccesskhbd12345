@@ -231,7 +231,7 @@ export const LessonPlanPreview: React.FC<LessonPlanPreviewProps> = ({ plan: rawP
         {/* POST-REFLECTION */}
         <div className="mb-8">
           <h2 className="text-[14pt] font-bold text-[#1F4E78] uppercase mb-2">POST-REFLECTION</h2>
-          <p>{plan.post_reflection || (plan.teaching_program_code === 'MOVE_UP' ? "Teacher's reflection after the lesson: ____________________________________________________________________________________________________" : "The lesson was delivered successfully. Pupils were engaged in learning activities and achieved target outcomes. A short review will be conducted in the next lesson.")}</p>
+          <p>{plan.post_reflection || "Pupils participated actively and achieved most lesson objectives. Some pupils still needed support with target language. More guided practice will be provided in the next lesson."}</p>
         </div>
 
         {/* SIDE-BY-SIDE SIGNATURE SECTION */}
@@ -242,7 +242,7 @@ export const LessonPlanPreview: React.FC<LessonPlanPreviewProps> = ({ plan: rawP
             <p>Trương Thị Lệ Hằng</p>
           </div>
           <div>
-            <p>TỔ TRƯỜNG</p>
+            <p>TỔ TRƯỞNG</p>
             <div className="h-24"></div>
             <p>Nguyễn Thị Ngà</p>
           </div>

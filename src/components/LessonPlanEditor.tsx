@@ -661,7 +661,7 @@ export const LessonPlanEditor: React.FC<LessonPlanEditorProps> = ({
             <p>Trương Thị Lệ Hằng</p>
           </div>
           <div>
-            <p>TỔ TRƯỜNG</p>
+            <p>TỔ TRƯỞNG</p>
             <div className="h-20"></div>
             <p>Nguyễn Thị Ngà</p>
           </div>

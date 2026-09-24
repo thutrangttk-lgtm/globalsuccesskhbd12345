@@ -440,9 +440,7 @@ export const exportToWord = async (rawPlan: LessonPlan) => {
   // POST-REFLECTION
   const reflectionHeading = createHeading1("POST-REFLECTION");
   const reflectionBody = createBodyParagraph(
-    plan.post_reflection || (isMoveUp
-      ? "Teacher's reflection after the lesson: ____________________________________________________________________________________________________"
-      : "Pupils participated actively in the pair-work activity and used the target sentence pattern confidently. Some pupils still had difficulty pronouncing the new words. More pronunciation practice should be provided next time.")
+    plan.post_reflection || "Pupils participated actively and achieved most lesson objectives. Some pupils still needed support with target language. More guided practice will be provided in the next lesson."
   );
 
   // FINAL SIGNATURE SECTION (Side by side)
@@ -485,7 +483,7 @@ export const exportToWord = async (rawPlan: LessonPlan) => {
                 alignment: AlignmentType.CENTER,
                 spacing: { before: 240, after: 720 },
                 children: [
-                  new TextRun({ text: "TỔ TRƯỜNG", font: "Times New Roman", size: 26, bold: true })
+                  new TextRun({ text: "TỔ TRƯỞNG", font: "Times New Roman", size: 26, bold: true })
                 ]
               }),
               new Paragraph({

@@ -17,9 +17,80 @@ export function isVietnameseText(text: string): boolean {
 }
 
 /**
+ * Deduplicates procedure activity lines while preserving valid line order, punctuation, and line breaks.
+ */
+export function deduplicateActivityLines(lines: string[]): string[] {
+  if (!lines || lines.length === 0) return [];
+  const result: string[] = [];
+  const seenNorm = new Set<string>();
+
+  for (const rawLine of lines) {
+    if (!rawLine) continue;
+    const trimmed = rawLine.trim();
+    if (!trimmed) continue;
+
+    const norm = trimmed.toLowerCase().replace(/\s+/g, ' ');
+
+    if (!seenNorm.has(norm)) {
+      seenNorm.add(norm);
+      result.push(trimmed);
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Detects and replaces vague or broken integration text such as "Encourage pupils to activity:"
+ * with a complete, meaningful sentence.
+ */
+export function fixVagueIntegrationText(text: string, labelName?: string): string {
+  if (!text || !text.trim()) {
+    const label = labelName ? `${labelName.trim()} ` : '';
+    return `Encourage pupils to participate actively in the ${label}integration activity.`;
+  }
+
+  let cleaned = text.trim();
+
+  // Remove repeated prefix duplications
+  cleaned = cleaned
+    .replace(/^(?:Encourage\s+pupils\s+to\s+)+/gi, 'Encourage pupils to ')
+    .replace(/^Encourage pupils to Raise pupils' awareness of/gi, "Raise pupils' awareness of")
+    .replace(/(?:activity|task)\s*:\s*(?:activity|task)\s*:?/gi, 'activity:')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  // Check for vague / broken phrases like "Encourage pupils to activity:", "activity:", "Activity: activity:", etc.
+  const cleanNoDot = cleaned.replace(/[.]+$/, '').trim();
+  const lower = cleanNoDot.toLowerCase();
+  const isVague =
+    /^(?:encourage\s+pupils\s+to\s+)?(?:activity|task|integration activity|integration task)\s*:?\s*$/i.test(cleanNoDot) ||
+    /^encourage\s+pupils\s+to\s*:?\s*$/i.test(cleanNoDot) ||
+    /encourage\s+pupils\s+to\s+(?:activity|task)\s*:?/i.test(cleanNoDot) ||
+    /^(?:activity|task|integration|:\s*)+$/i.test(cleanNoDot) ||
+    lower.includes('activity: activity') ||
+    lower.includes('task: task') ||
+    lower === 'activity:' ||
+    lower === 'activity' ||
+    lower === 'task:' ||
+    lower === 'task';
+
+  if (isVague) {
+    const label = labelName ? `${labelName.trim()} ` : '';
+    return `Encourage pupils to participate actively in the ${label}integration activity.`;
+  }
+
+  // Replace trailing "to activity:" or "to task:" inside longer sentences
+  cleaned = cleaned.replace(/\bto\s+(?:activity|task)\s*:?\s*$/gi, 'in the integration activity.');
+  cleaned = cleaned.replace(/in the integration activity in the integration activity/gi, 'in the integration activity');
+
+  return cleanEnglishFormatting(cleaned);
+}
+
+/**
  * Cleans formatting errors, duplicate colons, and awkward phrasing in English lesson plan strings.
  */
-export function cleanEnglishFormatting(text: string): string {
+export function cleanEnglishFormatting(text: string, labelName?: string): string {
   if (!text) return '';
   let cleaned = text
     .replace(/:\s*:/g, ':')
@@ -32,6 +103,13 @@ export function cleanEnglishFormatting(text: string): string {
     .replace(/\s+\./g, '.')
     .replace(/\s+/g, ' ')
     .trim();
+
+  if (
+    /^(?:Encourage\s+pupils\s+to\s+)?(?:activity|task|integration activity)\s*:?\s*$/i.test(cleaned) ||
+    /Encourage\s+pupils\s+to\s+(?:activity|task)\s*:?/i.test(cleaned)
+  ) {
+    return fixVagueIntegrationText(cleaned, labelName);
+  }
 
   cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
   if (!/[.!?]$/.test(cleaned)) {
@@ -264,32 +342,63 @@ export function sanitizeLessonPlanLanguage(plan: LessonPlan): LessonPlan {
 
   // 2. Sanitize Procedures Table rows
   const sanitizedProcedures = (plan.procedures || []).map((proc) => {
-    const teacherActs = (proc.teacherActivities || []).map((line) => {
-      if (isVietnameseText(line)) {
-        const match = line.match(/^Teacher introduces (?:a )?(.+?) integration (?:task|activity):\s*(.*)/i);
-        if (match) {
-          const labelName = match[1];
-          const rawDetail = match[2];
-          const translated = translateVietnameseIntegrationToEnglish(rawDetail, context);
-          const cleanDetail = translated.replace(/^Encourage pupils to\s*/i, '').replace(/[\.]*$/, '');
-          return `Teacher introduces a ${labelName} integration activity to encourage pupils to ${cleanDetail}.`;
-        }
-        return translateVietnameseIntegrationToEnglish(line, context);
-      }
-      return cleanEnglishFormatting(line);
-    });
+    const label = proc.integrationLabel;
 
-    const pupilActs = (proc.pupilActivities || []).map((line) => {
-      if (isVietnameseText(line)) {
-        const match = line.match(/^Pupils perform (?:the |task:)?\s*(.*)/i);
+    const teacherActs = deduplicateActivityLines(
+      (proc.teacherActivities || []).map((line) => {
+        const fixedLine = fixVagueIntegrationText(line, label);
+        if (isVietnameseText(fixedLine)) {
+          const match = fixedLine.match(/^Teacher introduces (?:a )?(.+?) integration (?:task|activity):\s*(.*)/i);
+          if (match) {
+            const labelName = match[1];
+            const rawDetail = match[2];
+            const translated = translateVietnameseIntegrationToEnglish(rawDetail, context);
+            let cleanDetail = fixVagueIntegrationText(translated, labelName)
+              .replace(/^Encourage pupils to\s*/i, '')
+              .replace(new RegExp(`in the (?:${labelName} )?integration activity`, 'gi'), '')
+              .replace(/[\.]*$/, '')
+              .trim();
+            if (!cleanDetail) cleanDetail = 'demonstrate positive behavior';
+            return `Teacher introduces a ${labelName} integration activity to encourage pupils to ${cleanDetail}.`;
+          }
+          return fixVagueIntegrationText(translateVietnameseIntegrationToEnglish(fixedLine, context), label);
+        }
+        return cleanEnglishFormatting(fixedLine, label);
+      })
+    );
+
+    const pupilActsRaw = (proc.pupilActivities || []).map((line) => {
+      const fixedLine = fixVagueIntegrationText(line, label);
+
+      if (isVietnameseText(fixedLine)) {
+        const match = fixedLine.match(/^Pupils perform (?:the |task:|the activity:)?\s*(.*)/i);
         if (match) {
           const translated = translateVietnameseIntegrationToEnglish(match[1], context);
-          return `Pupils perform the activity: ${translated}`;
+          const cleanDetail = fixVagueIntegrationText(translated, label).replace(/^Encourage pupils to\s*/i, '');
+          return `Pupils perform the activity: ${cleanDetail}`;
         }
-        return translateVietnameseIntegrationToEnglish(line, context);
+        return fixVagueIntegrationText(translateVietnameseIntegrationToEnglish(fixedLine, context), label);
       }
-      return cleanEnglishFormatting(line);
+
+      const match = fixedLine.match(/^Pupils perform (?:the |task:|the activity:)?\s*(.*)/i);
+      if (match) {
+        const cleanDetail = fixVagueIntegrationText(match[1], label).replace(/^Encourage pupils to\s*/i, '');
+        return `Pupils perform the activity: ${cleanDetail}`;
+      }
+
+      return cleanEnglishFormatting(fixedLine, label);
     });
+
+    let pupilActs = deduplicateActivityLines(pupilActsRaw);
+
+    // Ensure integration pupil activities contain 2-4 concise, non-repeated complete action sentences
+    if (label && pupilActs.length < 2) {
+      pupilActs = deduplicateActivityLines([
+        `Pupils engage in the ${label} integration activity.`,
+        ...pupilActs,
+        'Pupils share their answers or products with the class.'
+      ]);
+    }
 
     let outcome = proc.expectedOutcome || '';
     if (isVietnameseText(outcome)) {
@@ -316,8 +425,8 @@ export function sanitizeLessonPlanLanguage(plan: LessonPlan): LessonPlan {
       ...proc,
       teacherActivities: teacherActs,
       pupilActivities: pupilActs,
-      expectedOutcome: cleanEnglishFormatting(outcome),
-      evidence: cleanEnglishFormatting(evidence),
+      expectedOutcome: cleanEnglishFormatting(outcome, label),
+      evidence: cleanEnglishFormatting(evidence, label),
       postLessonAdjustments: adjustments
     };
   });
