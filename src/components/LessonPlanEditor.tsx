@@ -6,6 +6,8 @@ import { Save, Eye, FileDown, Printer, CheckCircle, Plus, Trash2, Video, Lock, R
 import { INTEGRATION_LABEL_NAMES, getDefaultIntegrationSuggestion } from '../utils/lessonGenerator';
 import { translateVietnameseIntegrationToEnglish, deduplicateIntegrations, isVietnameseText, sanitizeLessonPlanLanguage } from '../utils/integrationTranslator';
 import { getVocabObjective, getPatternObjective, getSkillsObjective, getCompetencesQualitiesObjective } from '../utils/objectiveGenerator';
+import { selectDynamicActivity, type ActivityContextInput } from '../utils/activitySelector';
+
 
 interface LessonPlanEditorProps {
   plan: LessonPlan;
@@ -209,25 +211,28 @@ export const LessonPlanEditor: React.FC<LessonPlanEditorProps> = ({
 
   const activeVideo = plan.videoMetadata || plan.procedures?.[0]?.videoMetadata;
 
+  const [warmupOffset, setWarmupOffset] = useState(0);
+
   const handleChangeWarmup = () => {
-    const vocabText = (plan.vocabulary || []).join(', ') || 'target words';
+    const nextOffset = warmupOffset + 1;
+    setWarmupOffset(nextOffset);
+
     const updatedProcedures = [...(plan.procedures || [])];
     if (updatedProcedures.length > 0) {
+      const actCtx: ActivityContextInput = {
+        gradeLevel: plan.grade_level || 3,
+        unitTitle: plan.unit_title,
+        lessonTitle: plan.lesson_title,
+        vocabulary: plan.vocabulary || [],
+        sentencePatterns: plan.sentence_patterns || [],
+        phonics: plan.phonics,
+        skills: plan.skills
+      };
+      const newWarmup = selectDynamicActivity('WARMUP', actCtx, nextOffset);
       updatedProcedures[0] = {
         ...updatedProcedures[0],
-        stageName: 'Warm-up & Lead-in (5 mins)',
-        teacherActivities: [
-          `Teacher leads the warm-up game "Slap the Board" using target vocabulary (${vocabText}).`,
-          'Teacher writes word cards on the board, explains rules, and models two practice rounds.',
-          'Teacher calls out target words and encourages active team participation.'
-        ],
-        pupilActivities: [
-          `Pupils play "Slap the Board" in two teams (whole class & group work).`,
-          'Pupils listen to teacher cues and slap the correct target word card on the board.',
-          'Pupils pronounce the slapped target word in chorus.'
-        ],
-        expectedOutcome: `Pupils recall and pronounce target vocabulary (${vocabText}) with high motivation.`,
-        evidence: `Pupils correctly identify, slap, and pronounce target word cards on the board.`,
+        ...newWarmup,
+        postLessonAdjustments: updatedProcedures[0]?.postLessonAdjustments || '',
         videoMetadata: undefined
       };
     }
@@ -604,9 +609,10 @@ export const LessonPlanEditor: React.FC<LessonPlanEditorProps> = ({
               <button
                 type="button"
                 onClick={handleChangeWarmup}
-                className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs px-3 py-1.5 rounded-lg transition-colors"
+                className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs px-3 py-1.5 rounded-lg transition-colors flex items-center space-x-1"
               >
-                CHANGE WARM-UP (Slap the Board)
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>ROTATE WARM-UP ACTIVITY</span>
               </button>
 
               <button

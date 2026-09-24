@@ -180,31 +180,16 @@ export const GlobalSuccess: React.FC = () => {
     }
 
     // Parse vocabulary & sentence patterns from DB record
-    const rawVocab = selectedRecord.vocabulary || '';
-    const rawPatterns = selectedRecord.sentence_patterns || '';
+    const rawVocab = (selectedRecord.vocabulary || '').trim();
+    const rawPatterns = (selectedRecord.sentence_patterns || '').trim();
 
-    const vocabList = rawVocab
-      .split(/[,;\n]/)
-      .map(s => s.trim())
-      .filter(Boolean);
+    const vocabList = rawVocab.length > 0
+      ? rawVocab.split(/[,;\n]/).map(s => s.trim()).filter(Boolean)
+      : ['[DATA MISSING / NEEDS VERIFIED SOURCE]'];
 
-    const patternList = rawPatterns
-      .split(/[/;\n]/)
-      .map(s => s.trim())
-      .filter(Boolean);
-
-    // Fail safely if NO content exists for selected lesson (unless it's a valid TEST or TEST_REVISION item)
-    const isSpecialTerminal = ['TEST', 'TEST_REVISION', 'TEST_SEMESTER', 'REVISION'].includes(selectedRecord.item_type || '');
-    if (
-      !isSpecialTerminal &&
-      vocabList.length === 0 &&
-      patternList.length === 0 &&
-      !selectedRecord.integration_detail_exact &&
-      !selectedRecord.phonics
-    ) {
-      setNoDataError("Verified curriculum data is not available for this lesson.");
-      return;
-    }
+    const patternList = rawPatterns.length > 0
+      ? rawPatterns.split(/[|;\n]/).map(s => s.trim()).filter(Boolean)
+      : ['[DATA MISSING / NEEDS VERIFIED SOURCE]'];
 
     // Exact Integration details
     const nameExact = selectedRecord.integration_name_exact;
@@ -241,7 +226,7 @@ export const GlobalSuccess: React.FC = () => {
       unitTitle: selectedRecord.unit_title || undefined,
       topic: selectedRecord.khdh_topic || undefined,
       lessonTitle: formattedLessonTitle,
-      vocabulary: vocabList
+      vocabulary: vocabList.filter(v => !v.includes('[DATA MISSING'))
     });
 
     const newPlan = generateStructuredLessonPlan({
@@ -251,6 +236,8 @@ export const GlobalSuccess: React.FC = () => {
       unitTitle: formattedUnitTitle,
       lessonNumber: selectedRecord.lesson_number || undefined,
       lessonTitle: formattedLessonTitle,
+      itemType: selectedRecord.item_type,
+      displayTitle: selectedRecord.display_title || selectedRecord.title || undefined,
       phonics: selectedRecord.phonics,
       vocabulary: vocabList,
       sentencePatterns: patternList,
