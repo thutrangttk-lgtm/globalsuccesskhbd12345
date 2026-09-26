@@ -2,7 +2,7 @@ import React from 'react';
 import type { LessonPlan } from '../types';
 import { exportToWord, getExportFileName } from '../utils/wordExport';
 import { FileDown, Printer, ArrowLeft } from 'lucide-react';
-import { sanitizeLessonPlanLanguage } from '../utils/integrationTranslator';
+import { sanitizeLessonPlanLanguage, formatSection3IntegrationItem, isIntegrationProcedureRow, getCanonicalIntegrationCellContent } from '../utils/integrationTranslator';
 import { getVocabObjective, getPatternObjective, getSkillsObjective, getCompetencesQualitiesObjective } from '../utils/objectiveGenerator';
 import { hasValidPhonics } from '../utils/lessonGenerator';
 
@@ -149,7 +149,7 @@ export const LessonPlanPreview: React.FC<LessonPlanPreviewProps> = ({ plan: rawP
                   <ul className="list-disc list-inside mt-1 space-y-1">
                     {plan.integrations.map((item, i) => (
                       <li key={i}>
-                        <strong>{item.type}{item.code ? ` [${item.code}]` : ''}:</strong> {item.wording}
+                        {formatSection3IntegrationItem(item)}
                       </li>
                     ))}
                   </ul>
@@ -206,15 +206,15 @@ export const LessonPlanPreview: React.FC<LessonPlanPreviewProps> = ({ plan: rawP
 
                   {/* Col 2 */}
                   <td className="p-3 border-r border-black space-y-2">
-                    <p className="font-bold">Expected Outcome:</p>
-                    <p>{proc.expectedOutcome}</p>
-                    <p className="font-bold pt-1">Evidence:</p>
-                    <p>{proc.evidence}</p>
-
-                    {(proc.integrationCode || proc.integrationLabel) && (
-                      <p className="pt-2 font-bold text-[#548235]">
-                        Integration: {proc.integrationLabel || 'NLS'} [{proc.integrationCode}]
-                      </p>
+                    {isIntegrationProcedureRow(proc) ? (
+                      <p>{getCanonicalIntegrationCellContent(proc, plan.integrations)}</p>
+                    ) : (
+                      <>
+                        <p className="font-bold">Expected Outcome:</p>
+                        <p>{proc.expectedOutcome}</p>
+                        <p className="font-bold pt-1">Evidence:</p>
+                        <p>{proc.evidence}</p>
+                      </>
                     )}
                   </td>
 

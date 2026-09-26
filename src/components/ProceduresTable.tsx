@@ -1,7 +1,8 @@
 import React from 'react';
-import type { ProcedureRow } from '../types';
+import type { ProcedureRow, IntegrationItem } from '../types';
 import { Plus, Trash2, RefreshCw } from 'lucide-react';
 import { generatePostLessonAdjustment } from '../utils/postLessonAdjustments';
+import { isIntegrationProcedureRow, getCanonicalIntegrationCellContent } from '../utils/integrationTranslator';
 
 interface ProceduresTableProps {
   procedures: ProcedureRow[];
@@ -9,6 +10,7 @@ interface ProceduresTableProps {
   editable?: boolean;
   vocabulary?: string[];
   sentencePatterns?: string[];
+  integrations?: IntegrationItem[];
 }
 
 export const ProceduresTable: React.FC<ProceduresTableProps> = ({
@@ -16,7 +18,8 @@ export const ProceduresTable: React.FC<ProceduresTableProps> = ({
   onChange,
   editable = true,
   vocabulary = [],
-  sentencePatterns = []
+  sentencePatterns = [],
+  integrations = []
 }) => {
   const handleUpdateRow = (index: number, field: keyof ProcedureRow, value: any) => {
     const next = [...procedures];
@@ -187,18 +190,16 @@ export const ProceduresTable: React.FC<ProceduresTableProps> = ({
                     </>
                   ) : (
                     <div>
-                      <p className="font-semibold text-xs text-slate-400 uppercase tracking-wider mb-0.5">Expected Outcome:</p>
-                      <p className="text-xs text-slate-200 mb-3">{row.expectedOutcome}</p>
+                      {isIntegrationProcedureRow(row) ? (
+                        <p className="text-xs text-slate-200">{getCanonicalIntegrationCellContent(row, integrations)}</p>
+                      ) : (
+                        <>
+                          <p className="font-semibold text-xs text-slate-400 uppercase tracking-wider mb-0.5">Expected Outcome:</p>
+                          <p className="text-xs text-slate-200 mb-3">{row.expectedOutcome}</p>
 
-                      <p className="font-semibold text-xs text-slate-400 uppercase tracking-wider mb-0.5">Evidence:</p>
-                      <p className="text-xs text-slate-200 mb-2">{row.evidence}</p>
-
-                      {row.integrationCode && (
-                        <div className="mt-2 pt-2 border-t border-slate-800">
-                          <span className="text-[11px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 px-2 py-0.5 rounded">
-                            Integration: {row.integrationCode}
-                          </span>
-                        </div>
+                          <p className="font-semibold text-xs text-slate-400 uppercase tracking-wider mb-0.5">Evidence:</p>
+                          <p className="text-xs text-slate-200 mb-2">{row.evidence}</p>
+                        </>
                       )}
                     </div>
                   )}

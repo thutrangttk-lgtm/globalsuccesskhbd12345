@@ -631,6 +631,7 @@ export const LessonPlanEditor: React.FC<LessonPlanEditorProps> = ({
             editable={true}
             vocabulary={plan.vocabulary}
             sentencePatterns={plan.sentence_patterns}
+            integrations={plan.integrations}
           />
         </div>
 

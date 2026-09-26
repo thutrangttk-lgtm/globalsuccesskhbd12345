@@ -13,7 +13,7 @@ import {
 } from 'docx';
 import { saveAs } from 'file-saver';
 import type { LessonPlan } from '../types';
-import { sanitizeLessonPlanLanguage } from './integrationTranslator';
+import { sanitizeLessonPlanLanguage, formatSection3IntegrationItem, isIntegrationProcedureRow, getCanonicalIntegrationCellContent } from './integrationTranslator';
 import { getVocabObjective, getPatternObjective, getSkillsObjective, getCompetencesQualitiesObjective } from './objectiveGenerator';
 import { hasValidPhonics } from './lessonGenerator';
 
@@ -301,9 +301,8 @@ export const exportToWord = async (rawPlan: LessonPlan) => {
   const integrationParagraphs: Paragraph[] = [];
   if (plan.integrations && plan.integrations.length > 0) {
     plan.integrations.forEach(item => {
-      const codeStr = item.code ? ` [${item.code}]` : '';
       integrationParagraphs.push(
-        createBodyParagraph(`${item.type}${codeStr}: ${item.wording}`, undefined, true)
+        createBodyParagraph(formatSection3IntegrationItem(item), undefined, true)
       );
     });
   } else {
@@ -384,36 +383,35 @@ export const exportToWord = async (rawPlan: LessonPlan) => {
       }))
     ];
 
-    const col2Children: Paragraph[] = [
-      new Paragraph({
-        children: [new TextRun({ text: "Expected Outcome:", font: "Times New Roman", size: 26, bold: true })],
-        spacing: { after: 40 }
-      }),
-      new Paragraph({
-        children: [new TextRun({ text: proc.expectedOutcome || "Pupils participate actively and master lesson content.", font: "Times New Roman", size: 26 })],
-        spacing: { after: 60 }
-      }),
-      new Paragraph({
-        children: [new TextRun({ text: "Evidence:", font: "Times New Roman", size: 26, bold: true })],
-        spacing: { after: 40 }
-      }),
-      new Paragraph({
-        children: [new TextRun({ text: proc.evidence || "Pupils perform task accurately and answer questions.", font: "Times New Roman", size: 26 })],
-        spacing: { after: 60 }
-      })
-    ];
+    let col2Children: Paragraph[] = [];
 
-    if (proc.integrationCode || proc.integrationLabel) {
-      col2Children.push(
+    if (isIntegrationProcedureRow(proc)) {
+      const integrationCellContent = getCanonicalIntegrationCellContent(proc, plan.integrations);
+      col2Children = [
         new Paragraph({
-          children: [new TextRun({ text: "Integration:", font: "Times New Roman", size: 26, bold: true, color: "548235" })],
-          spacing: { before: 40, after: 20 }
+          children: [new TextRun({ text: integrationCellContent, font: "Times New Roman", size: 26 })],
+          spacing: { after: 80 }
+        })
+      ];
+    } else {
+      col2Children = [
+        new Paragraph({
+          children: [new TextRun({ text: "Expected Outcome:", font: "Times New Roman", size: 26, bold: true })],
+          spacing: { after: 40 }
         }),
         new Paragraph({
-          children: [new TextRun({ text: `${proc.integrationLabel || 'NLS'} [${proc.integrationCode || ''}]`, font: "Times New Roman", size: 26, italics: true })],
+          children: [new TextRun({ text: proc.expectedOutcome || "Pupils participate actively and master lesson content.", font: "Times New Roman", size: 26 })],
+          spacing: { after: 60 }
+        }),
+        new Paragraph({
+          children: [new TextRun({ text: "Evidence:", font: "Times New Roman", size: 26, bold: true })],
           spacing: { after: 40 }
+        }),
+        new Paragraph({
+          children: [new TextRun({ text: proc.evidence || "Pupils perform task accurately and answer questions.", font: "Times New Roman", size: 26 })],
+          spacing: { after: 60 }
         })
-      );
+      ];
     }
 
     const col3Children: Paragraph[] = [

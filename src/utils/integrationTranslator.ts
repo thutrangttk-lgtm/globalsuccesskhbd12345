@@ -1,4 +1,98 @@
-import type { LessonPlan, IntegrationItem } from '../types';
+import type { LessonPlan, IntegrationItem, ProcedureRow } from '../types';
+
+export const INTEGRATION_LABEL_NAMES: Record<string, string> = {
+  CDS: 'Digital Transformation',
+  ETHICS: 'Moral Education',
+  ATGT: 'Traffic Safety Education',
+  GDDP: 'Local Education',
+  STEM: 'STEM Education',
+  ANQP: 'National Defence and Security Education',
+  HUMAN_RIGHTS: 'Human Rights Education',
+  CHILDREN_RIGHTS: "Children's Rights Education",
+  ENVIRONMENT: 'Environmental Protection',
+  WATER_PROTECTION: 'Water Resource Protection',
+  NLS: 'Digital Competence (NLS)',
+  AI: 'AI Education',
+  CUSTOM: 'Custom Integration'
+};
+
+export function getIntegrationDisplayName(item: { type: string; isCustomLabel?: boolean; customLabelText?: string }): string {
+  if (item.isCustomLabel && item.customLabelText) return item.customLabelText;
+  return INTEGRATION_LABEL_NAMES[item.type] || item.type;
+}
+
+export function formatSection3IntegrationItem(item: IntegrationItem): string {
+  const name = getIntegrationDisplayName(item);
+  const code = item.code || item.official_code || '';
+  const codeStr = code ? ` [${code.replace(/^\[|\]$/g, '')}]` : '';
+  const wording = item.wording || item.custom_teacher_content || item.official_wording || '';
+  return `${name}${codeStr}: ${wording}`;
+}
+
+export function isIntegrationProcedureRow(proc: ProcedureRow): boolean {
+  if (!proc) return false;
+  return Boolean(
+    proc.integrationCode ||
+    proc.integrationLabel ||
+    (proc.stageName && /integration/i.test(proc.stageName))
+  );
+}
+
+export function getCanonicalIntegrationCellContent(
+  proc: ProcedureRow,
+  integrations: IntegrationItem[] = []
+): string {
+  if (!proc) return '';
+
+  const procCode = (proc.integrationCode || '').replace(/^\[|\]$/g, '').trim();
+
+  let matchedItem: IntegrationItem | undefined = undefined;
+
+  if (procCode) {
+    matchedItem = integrations.find(
+      (item) => item.code === procCode || item.official_code === procCode || item.code?.replace(/^\[|\]$/g, '').trim() === procCode
+    );
+  }
+
+  if (!matchedItem && proc.integrationLabel) {
+    const cleanProcLabel = proc.integrationLabel.replace(/\s*\[.*\]$/, '').trim().toLowerCase();
+    matchedItem = integrations.find((item) => {
+      const name = getIntegrationDisplayName(item).toLowerCase();
+      return name === cleanProcLabel || item.type.toLowerCase() === cleanProcLabel;
+    });
+  }
+
+  if (!matchedItem && proc.stageName) {
+    matchedItem = integrations.find((item) => {
+      const code = item.code || item.official_code;
+      if (code && proc.stageName.includes(code)) return true;
+      const name = getIntegrationDisplayName(item);
+      if (name && proc.stageName.toLowerCase().includes(name.toLowerCase())) return true;
+      return false;
+    });
+  }
+
+  if (matchedItem) {
+    return formatSection3IntegrationItem(matchedItem);
+  }
+
+  let name = proc.integrationLabel || 'Integration';
+  name = name.replace(/\s*\[.*\]$/, '').trim();
+  if (INTEGRATION_LABEL_NAMES[name]) {
+    name = INTEGRATION_LABEL_NAMES[name];
+  }
+
+  const codeStr = procCode ? ` [${procCode}]` : '';
+
+  let wording = proc.evidence || proc.expectedOutcome || '';
+  wording = wording
+    .replace(/^Pupils successfully complete the integration activity:\s*/i, '')
+    .replace(/^Pupils complete the integration activity:\s*/i, '')
+    .replace(/^Pupils perform the task:\s*/i, '')
+    .trim();
+
+  return `${name}${codeStr}: ${wording}`;
+}
 
 /**
  * Utility for translating Vietnamese integration statements into natural, accurate,
