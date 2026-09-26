@@ -637,8 +637,8 @@ export const LessonPlanEditor: React.FC<LessonPlanEditorProps> = ({
         {/* SECTION POST-REFLECTION */}
         <div>
           <h2 className="text-base font-bold text-[#1F4E78] uppercase mb-1">POST-REFLECTION</h2>
-          <p className="text-xs text-slate-500 mb-2 italic font-sans">
-            Write 2–3 short sentences: (1) What worked well, (2) What pupils found difficult, (3) Practical adjustment for next lesson.
+          <p className="text-xs text-slate-700 mb-2 font-semibold font-sans">
+            Teacher's reflection after the lesson:
           </p>
           <textarea
             rows={3}

@@ -231,6 +231,7 @@ export const LessonPlanPreview: React.FC<LessonPlanPreviewProps> = ({ plan: rawP
         {/* POST-REFLECTION */}
         <div className="mb-8">
           <h2 className="text-[14pt] font-bold text-[#1F4E78] uppercase mb-2">POST-REFLECTION</h2>
+          <p className="font-semibold text-slate-800 mb-1">Teacher's reflection after the lesson:</p>
           <p>{plan.post_reflection || "Pupils participated actively and achieved most lesson objectives. Some pupils still needed support with target language. More guided practice will be provided in the next lesson."}</p>
         </div>
 

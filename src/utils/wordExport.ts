@@ -439,6 +439,7 @@ export const exportToWord = async (rawPlan: LessonPlan) => {
 
   // POST-REFLECTION
   const reflectionHeading = createHeading1("POST-REFLECTION");
+  const reflectionSubheading = createBodyParagraph("Teacher's reflection after the lesson:");
   const reflectionBody = createBodyParagraph(
     plan.post_reflection || "Pupils participated actively and achieved most lesson objectives. Some pupils still needed support with target language. More guided practice will be provided in the next lesson."
   );
@@ -527,6 +528,7 @@ export const exportToWord = async (rawPlan: LessonPlan) => {
           proceduresTable,
           new Paragraph({ spacing: { after: 200 } }),
           reflectionHeading,
+          reflectionSubheading,
           reflectionBody,
           new Paragraph({ spacing: { after: 300 } }),
           signatureTable

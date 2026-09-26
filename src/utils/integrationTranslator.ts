@@ -551,10 +551,10 @@ export function generateModulePostLessonReflection(
   programCode?: 'MOVE_UP' | 'ENHANCED' | 'CUSTOM' | 'GLOBAL_SUCCESS',
   vocabulary: string[] = [],
   sentencePatterns: string[] = [],
-  _skills: string[] = [],
+  skills: string[] = [],
   unitTitle: string = '',
   lessonTitle: string = '',
-  _activities: string = '',
+  activities: string = '',
   itemType?: string,
   displayTitle?: string
 ): string {
@@ -630,12 +630,83 @@ export function generateModulePostLessonReflection(
 
   // 7. MOVE UP
   if (programCode === 'MOVE_UP' || /move\s*up/i.test(combinedText)) {
-    const options = [
-      "Pupils engaged actively in the combined skill activities. Further practice will help reinforce target language accuracy.",
-      "Pupils participated enthusiastically in Move Up tasks. More guided practice will strengthen their speaking confidence.",
-      "Pupils completed the integrated lesson tasks effectively. Continued pair practice will help build fluency and accuracy."
-    ];
-    return options[idx % options.length];
+    const cleanVocab = (vocabulary || []).map(v => v.trim()).filter(Boolean);
+    const cleanPatterns = (sentencePatterns || []).map(p => p.trim()).filter(Boolean);
+    const cleanSkills = (skills || []).map(s => s.trim()).filter(Boolean);
+
+    const vocabSample = cleanVocab.slice(0, 3).join(', ');
+
+    let patternSample = cleanPatterns[0] ? cleanPatterns[0].split('-')[0].trim().replace(/\.$/, '') : '';
+
+    let activitySample = '';
+    if (activities) {
+      const firstAct = activities.split(/;|\n/)[0]?.trim();
+      if (firstAct && firstAct.length < 50) {
+        activitySample = firstAct.replace(/\.$/, '');
+      }
+    }
+
+    const skillSample = cleanSkills.length > 0 ? cleanSkills.slice(0, 2).join(' and ').toLowerCase() : '';
+
+    const sentence1Options: string[] = [];
+
+    if (vocabSample && patternSample) {
+      sentence1Options.push(
+        `Pupils participated actively in practicing target vocabulary (${vocabSample}) and key sentence structures.`,
+        `Pupils applied the target sentence pattern "${patternSample}" enthusiastically during speaking activities.`,
+        `Pupils demonstrated good engagement while learning vocabulary (${vocabSample}) and practicing sentence patterns.`
+      );
+    } else if (vocabSample) {
+      sentence1Options.push(
+        `Pupils participated actively in learning target vocabulary (${vocabSample}) through classroom activities.`,
+        `Pupils demonstrated good recall and clear pronunciation of key vocabulary (${vocabSample}) during practice tasks.`,
+        `Pupils engaged enthusiastically in vocabulary practice tasks covering ${vocabSample}.`
+      );
+    } else if (patternSample) {
+      sentence1Options.push(
+        `Pupils applied target sentence patterns such as "${patternSample}" actively in speaking activities.`,
+        `Pupils practiced sentence structures like "${patternSample}" confidently in pair work.`,
+        `Pupils engaged enthusiastically in speaking tasks using the target pattern "${patternSample}".`
+      );
+    } else if (activitySample) {
+      sentence1Options.push(
+        `Pupils engaged actively in "${activitySample}" and achieved the lesson learning outcomes.`,
+        `Pupils completed the activity "${activitySample}" enthusiastically during class.`,
+        `Pupils participated eagerly in "${activitySample}" and demonstrated good progress.`
+      );
+    } else {
+      sentence1Options.push(
+        `Pupils participated actively in ${skillSample ? `${skillSample} tasks` : 'combined skill activities'} and achieved the lesson objectives.`,
+        `Pupils engaged enthusiastically in Move Up integrated tasks with good classroom cooperation.`,
+        `Pupils completed the lesson activities effectively and demonstrated target language comprehension.`
+      );
+    }
+
+    const sentence2Options: string[] = [];
+    if (vocabSample) {
+      sentence2Options.push(
+        `More guided practice will be provided in the next lesson to consolidate vocabulary (${vocabSample}).`,
+        `Further pair practice will be offered to help pupils master key vocabulary (${vocabSample}) confidently.`,
+        `Scaffolded practice will be conducted next time to support pupils needing extra help with target words.`
+      );
+    } else if (patternSample) {
+      sentence2Options.push(
+        `More guided practice will be provided in the next lesson to reinforce target sentence structures.`,
+        `Further speaking practice will help pupils build fluency and accuracy with target patterns.`,
+        `Additional support will be offered to assist pupils who need extra practice with sentence patterns.`
+      );
+    } else {
+      sentence2Options.push(
+        `More guided practice will be provided in the next lesson for pupils who need additional support.`,
+        `Further interactive practice will be offered to strengthen pupils' speaking confidence.`,
+        `Continued review in upcoming lessons will help consolidate target language fluency.`
+      );
+    }
+
+    const s1 = sentence1Options[idx % sentence1Options.length];
+    const s2 = sentence2Options[(idx + 1) % sentence2Options.length];
+
+    return `${s1} ${s2}`;
   }
 
   // 8. NORMAL UNIT LESSONS / CUSTOM / GENERAL
