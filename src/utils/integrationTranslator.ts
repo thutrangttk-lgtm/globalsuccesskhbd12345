@@ -228,7 +228,7 @@ export function translateVietnameseIntegrationToEnglish(
   // Clean initial colons, repetitive dashes, or awkward leading symbols
   text = text.replace(/^[:\s\-]+/, '').trim();
 
-  // Extract leading Code / Prefix (e.g. "AI 3.A1.MR1:", "NLS_3.1:", "COMP-01:", "CV 5512:", etc.)
+  // Extract leading Code / Prefix (e.g. "AI 3.A1.MR1:", "NLS 2.1.CB1a:", "NLS_3.1:", "CV 5512:", etc.)
   let codePrefix = '';
   const codePrefixMatch = text.match(/^((?:(?:AI|NLS|CDS|ETHICS|ATGT|GDDP|STEM|ANQP|HUMAN_RIGHTS|CHILDREN_RIGHTS|ENVIRONMENT|WATER_PROTECTION|CUSTOM|CV|QD|COMP|TC|YCCD)[\s_\-\.\/]*[A-Z0-9_\-\.\/]*|[A-Z0-9_\.\-]{2,15})\s*:\s*)/i);
   if (codePrefixMatch) {
@@ -236,79 +236,95 @@ export function translateVietnameseIntegrationToEnglish(
     text = text.slice(codePrefix.length).trim();
   }
 
-  // If remaining text is already pure English, format capitalization, fix colons, and return
+  // If remaining text has zero Vietnamese words or diacritics, format clean English and return
   if (!isVietnameseText(text)) {
     return cleanEnglishFormatting(codePrefix + text);
   }
 
-  // Extract quoted topics like "In the backyard" if present
+  // Extract quoted topics like "In the classroom" if present
   const topicMatch = text.match(/chủ đề\s*["“']([^"”']+)["”']/i) || text.match(/["“']([^"”']+)["”']/);
   const topicStr = topicMatch ? topicMatch[1] : '';
 
-  // 1. Direct Pattern & Phrase Mappings (High priority exact/near matches)
+  // 1. High-Priority Exact Pattern Mappings for Complete Educational Statements
   const exactMappings: [RegExp, string | ((...args: any[]) => string)][] = [
     [
-      /^sử dụng điện thoại thông minh để ghi âm phát âm và gửi bài cho giáo viên qua Zalo\.?$/i,
+      /^(?:rèn|rèn luyện)\s+tinh\s+thần\s+đoàn\s+kết\s*:\s*tham\s+gia\s+trò\s+chơi\s+tập\s+thể\.?$/i,
+      'Foster teamwork and cooperation through group games.'
+    ],
+    [
+      /^(?:rèn|rèn luyện)\s+tinh\s+thần\s+đoàn\s+kết\s+(?:khi\s+)?tham\s+gia\s+trò\s+chơi\s+tập\s+thể\.?$/i,
+      'Foster teamwork and cooperation through group games.'
+    ],
+    [
+      /^giáo\s+dục\s+ý\s+thức\s+bảo\s+vệ\s+môi\s+trường\s+thông\s+qua\s+tình\s+huống\s+phù\s+hợp\s+với\s+chủ\s+đề\s*["“']([^"”']+)["”']\s*;\s*giữ\s+vệ\s+sinh,\s*tiết\s+kiệm\s+tài\s+nguyên\s+và\s+không\s+xả\s+rác\.?$/i,
+      (_m: string, topic: string) => `Raise pupils' awareness of environmental protection in situations related to the lesson topic "${topic}", encouraging them to maintain cleanliness, save resources, and refrain from littering.`
+    ],
+    [
+      /^sử\s+dụng\s+công\s+cụ\s+AI\s+để\s+luyện\s+nghe\s+và\s+phát\s+âm\s*["“']?([^"”']+)["”']?\.?$/i,
+      (_m: string, word: string) => `Use an AI tool to practise listening to and pronouncing “${word.trim()}”.`
+    ],
+    [
+      /^lựa\s+chọn\s+công\s+nghệ\s+số\s+đơn\s+giản\s+để\s+tương\s+tác\s+trong\s+hoạt\s+động\s+học\s+tập\s+có\s+hướng\s+dẫn\.?$/i,
+      'Select simple digital technologies to interact in guided learning activities.'
+    ],
+    [
+      /^sử\s+dụng\s+điện\s+thoại\s+thông\s+minh\s+để\s+ghi\s+âm\s+phát\s+âm\s+và\s+gửi\s+bài\s+cho\s+giáo\s+viên\s+qua\s+Zalo\.?$/i,
       'Use a smartphone to record pronunciation practice and submit the recording to the teacher via Zalo.'
     ],
     [
-      /^sử dụng điện thoại thông minh để ghi âm phát âm và gửi bài cho giáo viên qua\s+([A-Za-z0-9_\-]+)\.?$/i,
+      /^sử\s+dụng\s+điện\s+thoại\s+thông\s+minh\s+để\s+ghi\s+âm\s+phát\s+âm\s+và\s+gửi\s+bài\s+cho\s+giáo\s+viên\s+qua\s+([A-Za-z0-9_\-]+)\.?$/i,
       (_m: string, app: string) => `Use a smartphone to record pronunciation practice and submit the recording to the teacher via ${app}.`
     ],
     [
-      /^thảo luận AI giúp chấm điểm phát âm từ vựng đúng\/sai\.?$/i,
+      /^thảo\s+luận\s+AI\s+giúp\s+chấm\s+điểm\s+phát\s+âm\s+từ\s+vựng\s+đúng\/sai\.?$/i,
       'Discuss how AI can help provide feedback on whether vocabulary pronunciation is correct.'
     ],
     [
-      /^thảo luận AI giúp chấm điểm phát âm từ vựng\.?$/i,
+      /^thảo\s+luận\s+AI\s+giúp\s+chấm\s+điểm\s+phát\s+âm\s+từ\s+vựng\.?$/i,
       'Discuss how AI can help provide feedback on vocabulary pronunciation.'
     ],
     [
-      /^thảo luận AI giúp chấm điểm phát âm\.?$/i,
+      /^thảo\s+luận\s+AI\s+giúp\s+chấm\s+điểm\s+phát\s+âm\.?$/i,
       'Discuss how AI can help provide feedback on pronunciation.'
     ],
     [
-      /^giáo dục học sinh giữ gìn sách vở\.?$/i,
+      /^giáo\s+dục\s+học\s+sinh\s+giữ\s+gìn\s+sách\s+vở\.?$/i,
       'Encourage pupils to take good care of their books and learning materials.'
     ],
     [
-      /^giáo dục học sinh giữ gìn đồ dùng học tập\.?$/i,
+      /^giáo\s+dục\s+học\s+sinh\s+giữ\s+gìn\s+đồ\s+dùng\s+học\s+tập\.?$/i,
       'Encourage pupils to take good care of their learning materials.'
     ],
     [
-      /^(?:rèn|rèn luyện)\s+tinh thần đoàn kết khi tham gia trò chơi tập thể\.?$/i,
-      'Encourage teamwork and cooperation through group games.'
-    ],
-    [
-      /^sử dụng trợ lý AI hỗ trợ luyện phát âm\.?$/i,
+      /^sử\s+dụng\s+trợ\s+lý\s+AI\s+hỗ\s+trợ\s+luyện\s+phát\s+âm\.?$/i,
       'Use an AI assistant to support pronunciation practice.'
     ],
     [
-      /giáo dục thái độ,?\s*hành vi phù hợp với chủ đề\s*["“']([^"”']+)["”']\s*:\s*lịch sự,\s*có trách nhiệm,\s*tôn trọng người khác và giữ gìn đồ dùng\/môi trường liên quan đến tình huống của bài/i,
+      /giáo\s+dục\s+thái\s+độ,?\s*hành\s+vi\s+phù\s+hợp\s+với\s+chủ\s+đề\s*["“']([^"”']+)["”']\s*:\s*lịch\s+sự,\s*có\s+trách\s+nhiệm,\s*tôn\s+trọng\s+người\s+khác\s+và\s+giữ\s+gìn\s+đồ\s+dùng\/môi\s+trường\s+liên\s+quan\s+đến\s+tình\s+huống\s+của\s+bài/i,
       (_m: string, topic: string) => `Encourage pupils to behave politely and responsibly, respect others, and take care of belongings and the environment in situations related to the lesson topic "${topic}".`
     ],
     [
-      /giáo dục thái độ,?\s*hành vi phù hợp với chủ đề\s*["“']([^"”']+)["”']\s*:\s*(.*)/i,
+      /giáo\s+dục\s+thái\s+độ,?\s*hành\s+vi\s+phù\s+hợp\s+với\s+chủ\s+đề\s*["“']([^"”']+)["”']\s*:\s*(.*)/i,
       (_m: string, topic: string, details: string) => {
         const translatedDetails = translateVietnameseIntegrationToEnglish(details);
         const cleanDetails = translatedDetails.replace(/^Encourage pupils to\s*/i, '').replace(/[\.]*$/, '');
         return `Encourage pupils to demonstrate positive behavior, ${cleanDetails} in situations related to the lesson topic "${topic}".`;
       }
     ],
-    [/giáo dục học sinh biết yêu quý gia đình và giúp đỡ bố mẹ/i, 'Encourage pupils to appreciate their family and help their parents.'],
-    [/yêu quý gia đình và giúp đỡ bố mẹ/i, 'Encourage pupils to appreciate their family and help their parents.'],
-    [/giáo dục ý thức bảo vệ môi trường,?\s*không xả rác/i, "Raise pupils' awareness of environmental protection and encourage them not to litter."],
-    [/bảo vệ môi trường,?\s*không xả rác/i, "Raise pupils' awareness of environmental protection and encourage them not to litter."],
-    [/giữ gìn vệ sinh trường lớp/i, "Raise pupils' awareness of keeping their school and classroom clean."],
-    [/giữ gìn vệ sinh lớp học/i, "Raise pupils' awareness of keeping their classroom clean and tidy."],
-    [/chấp hành tốt luật giao thông/i, "Encourage pupils to observe traffic safety rules and practice safe commuting habits."],
-    [/an toàn giao thông/i, "Raise pupils' awareness of traffic safety rules."],
-    [/tiết kiệm điện và nước/i, "Raise pupils' awareness of saving electricity and clean water."],
-    [/tiết kiệm nước/i, "Raise pupils' awareness of saving clean water."],
-    [/tôn trọng thầy cô và bạn bè/i, "Encourage pupils to show respect for teachers and classmates."],
-    [/tôn trọng bạn bè/i, "Encourage pupils to show respect for their classmates."],
-    [/bảo vệ thông tin cá nhân/i, "Guide pupils to protect personal information in digital learning environments."],
-    [/rèn luyện tính tự lập/i, "Encourage pupils to develop self-discipline and independence."]
+    [/giáo\s+dục\s+học\s+sinh\s+biết\s+yêu\s+quý\s+gia\s+đình\s+và\s+giúp\s+đỡ\s+bố\s+mẹ/i, 'Encourage pupils to appreciate their family and help their parents.'],
+    [/yêu\s+quý\s+gia\s+đình\s+và\s+giúp\s+đỡ\s+bố\s+mẹ/i, 'Encourage pupils to appreciate their family and help their parents.'],
+    [/giáo\s+dục\s+ý\s+thức\s+bảo\s+vệ\s+môi\s+trường,?\s*không\s+xả\s+rác/i, "Raise pupils' awareness of environmental protection and encourage them not to litter."],
+    [/bảo\s+vệ\s+môi\s+trường,?\s*không\s+xả\s+rác/i, "Raise pupils' awareness of environmental protection and encourage them not to litter."],
+    [/giữ\s+gìn\s+vệ\s+sinh\s+trường\s+lớp/i, "Raise pupils' awareness of keeping their school and classroom clean."],
+    [/giữ\s+gìn\s+vệ\s+sinh\s+lớp\s+học/i, "Raise pupils' awareness of keeping their classroom clean and tidy."],
+    [/chấp\s+hành\s+tốt\s+luật\s+giao\s+thông/i, "Encourage pupils to observe traffic safety rules and practice safe commuting habits."],
+    [/an\s+toàn\s+giao\s+thông/i, "Raise pupils' awareness of traffic safety rules."],
+    [/tiết\s+kiệm\s+điện\s+và\s+nước/i, "Raise pupils' awareness of saving electricity and clean water."],
+    [/tiết\s+kiệm\s+nước/i, "Raise pupils' awareness of saving clean water."],
+    [/tôn\s+trọng\s+thầy\s+cô\s+và\s+bạn\s+bè/i, "Encourage pupils to show respect for teachers and classmates."],
+    [/tôn\s+trọng\s+bạn\s+bè/i, "Encourage pupils to show respect for their classmates."],
+    [/bảo\s+vệ\s+thông\s+tin\s+cá\s+nhân/i, "Guide pupils to protect personal information in digital learning environments."],
+    [/rèn\s+luyện\s+tính\s+tự\s+lập/i, "Encourage pupils to develop self-discipline and independence."]
   ];
 
   for (const [pattern, replacement] of exactMappings) {
@@ -326,14 +342,26 @@ export function translateVietnameseIntegrationToEnglish(
     }
   }
 
-  // 2. Rule-based Decomposition for Arbitrary Vietnamese Educational Sentences
+  // 2. Rule-based Decomposition for Arbitrary Educational Statements
   let result = text;
+
+  // Handle leading colon patterns (e.g. "Rèn tinh thần đoàn kết: tham gia trò chơi tập thể.")
+  result = result
+    .replace(/^(?:rèn|rèn luyện)\s+tinh\s+thần\s+đoàn\s+kết\s*:\s*/i, 'foster teamwork and cooperation through ')
+    .replace(/^bảo\s+vệ\s+môi\s+trường\s*:\s*/i, 'raise pupils\' awareness of environmental protection through ')
+    .replace(/^an\s+toàn\s+giao\s+thông\s*:\s*/i, 'raise pupils\' awareness of traffic safety by ')
+    .replace(/^tiết\s+kiệm\s+điện\s+nước\s*:\s*/i, 'raise pupils\' awareness of saving electricity and water by ');
 
   // Determine prefix verb phrase
   let prefix = '';
-  if (/^sử\s+dụng\b/i.test(result)) {
+  if (/^(?:foster|raise|use|select|discuss|guide)\s+/i.test(result)) {
+    prefix = '';
+  } else if (/^sử\s+dụng\b/i.test(result)) {
     prefix = "Use ";
     result = result.replace(/^sử\s+dụng\s*/i, '');
+  } else if (/^lựa\s+chọn\b/i.test(result)) {
+    prefix = "Select ";
+    result = result.replace(/^lựa\s+chọn\s*/i, '');
   } else if (/^thảo\s+luận\s+AI\s+giúp\b/i.test(result)) {
     prefix = "Discuss how AI can help ";
     result = result.replace(/^thảo\s+luận\s+AI\s+giúp\s*/i, '');
@@ -352,9 +380,9 @@ export function translateVietnameseIntegrationToEnglish(
   } else if (/^(?:giáo dục|bồi dưỡng|nhắc nhở)\s+học\s+sinh\b/i.test(result)) {
     prefix = "Encourage pupils to ";
     result = result.replace(/^(?:giáo dục|bồi dưỡng|nhắc nhở)\s+học\s+sinh\s*(?:biết|có)?\s*/i, '');
-  } else if (/^rèn\s+tinh\s+thần\s+đoàn\s+kết\s+(?:khi\s+)?/i.test(result)) {
-    prefix = "Encourage teamwork and cooperation ";
-    result = result.replace(/^rèn\s+tinh\s+thần\s+đoàn\s+kết\s+(?:khi\s+)?/i, '');
+  } else if (/^(?:rèn|rèn luyện)\s+tinh\s+thần\s+đoàn\s+kết\s+(?:khi\s+)?/i.test(result)) {
+    prefix = "Foster teamwork and cooperation ";
+    result = result.replace(/^(?:rèn|rèn luyện)\s+tinh\s+thần\s+đoàn\s+kết\s+(?:khi\s+)?/i, '');
   } else if (/^(?:rèn\s+luyện|tạo)\s+(?:cho\s+học\s+sinh\s+)?thói\s+quen\b/i.test(result)) {
     prefix = "Encourage pupils to develop habits of ";
     result = result.replace(/^(?:rèn\s+luyện|tạo)\s+(?:cho\s+học\s+sinh\s+)?thói\s+quen\s*/i, '');
@@ -371,8 +399,15 @@ export function translateVietnameseIntegrationToEnglish(
     prefix = "Encourage pupils to ";
   }
 
-  // Dictionary of verb and phrase translations (order: longest/most specific first)
+  // 3. Multi-word Educational Phrase Dictionary (Longer/more specific phrases first)
   const phraseDictionary: [RegExp, string][] = [
+    [/\bcông nghệ số đơn giản\b/gi, 'simple digital technologies'],
+    [/\bcông nghệ số\b/gi, 'digital technologies'],
+    [/\bhoạt động học tập có hướng dẫn\b/gi, 'guided learning activities'],
+    [/\bhoạt động học tập\b/gi, 'learning activities'],
+    [/\bhọc tập có hướng dẫn\b/gi, 'guided learning'],
+    [/\btương tác trong\b/gi, 'interact in'],
+    [/\bđể tương tác\b/gi, 'to interact'],
     [/\bchấm điểm phát âm từ vựng đúng\/sai\b/gi, 'provide feedback on whether vocabulary pronunciation is correct'],
     [/\bchấm điểm phát âm từ vựng\b/gi, 'provide feedback on vocabulary pronunciation'],
     [/\bchấm điểm phát âm\b/gi, 'provide feedback on pronunciation'],
@@ -382,8 +417,10 @@ export function translateVietnameseIntegrationToEnglish(
     [/\bcông cụ AI\b/gi, 'an AI tool'],
     [/\bphần mềm AI\b/gi, 'AI software'],
     [/\bhỗ trợ luyện phát âm\b/gi, 'to support pronunciation practice'],
-    [/\bluyện phát âm\b/gi, 'pronunciation practice'],
-    [/\bđể ghi âm phát âm\b/gi, 'to record pronunciation practice'],
+    [/\bđể luyện nghe và phát âm\b/gi, 'to practise listening to and pronouncing'],
+    [/\bluyện nghe và phát âm\b/gi, 'practise listening to and pronouncing'],
+    [/\bluyện nghe\b/gi, 'practise listening'],
+    [/\bluyện phát âm\b/gi, 'practise pronunciation'],
     [/\bghi âm phát âm\b/gi, 'record pronunciation practice'],
     [/\bghi âm bài nói\b/gi, 'record speaking practice'],
     [/\bquay video\b/gi, 'record a video'],
@@ -412,25 +449,33 @@ export function translateVietnameseIntegrationToEnglish(
     [/\bgia đình\b/gi, 'their family'],
     [/\bgiúp đỡ bố mẹ\b|\bgiúp đỡ cha mẹ\b/gi, 'help their parents'],
     [/\bbảo vệ môi trường\b/gi, 'environmental protection'],
-    [/\bkhông xả rác bừa bãi\b|\bkhông xả rác\b/gi, 'and encourage them not to litter'],
+    [/\bgiữ vệ sinh,\s*tiết kiệm tài nguyên và không xả rác\b/gi, 'maintaining cleanliness, saving resources, and refraining from littering'],
+    [/\bgiữ vệ sinh,\s*tiết kiệm tài nguyên và không xả rác bừa bãi\b/gi, 'maintaining cleanliness, saving resources, and refraining from littering'],
+    [/\bkhông xả rác bừa bãi\b|\bkhông xả rác\b/gi, 'refrain from littering'],
+    [/\btiết kiệm tài nguyên\b/gi, 'save resources'],
     [/\bgiữ gìn vệ sinh trường lớp\b/gi, 'keep their school and classroom clean'],
     [/\bgiữ gìn vệ sinh lớp học\b/gi, 'keep their classroom clean and tidy'],
-    [/\bgiữ gìn vệ sinh\b/gi, 'keep surroundings clean'],
+    [/\bgiữ gìn vệ sinh\b|\bgiữ vệ sinh\b/gi, 'maintain cleanliness'],
     [/\bchấp hành tốt\b|\bchấp hành\b/gi, 'observe'],
     [/\bluật giao thông\b|\ban toàn giao thông\b/gi, 'traffic safety rules'],
+    [/\btiết kiệm điện và nước\b/gi, 'save electricity and clean water'],
     [/\btiết kiệm nước\b/gi, 'save clean water'],
     [/\btiết kiệm điện\b/gi, 'save electricity'],
     [/\btôn trọng thầy cô và bạn bè\b/gi, 'show respect for teachers and classmates'],
     [/\btôn trọng bạn bè\b/gi, 'show respect for classmates'],
     [/\btôn trọng\b/gi, 'show respect for'],
+    [/\bthông qua tình huống phù hợp với chủ đề\b/gi, 'in situations related to the lesson topic'],
+    [/\bthông qua tình huống\b/gi, 'through situations'],
+    [/\bphù hợp với chủ đề\b/gi, 'related to the lesson topic'],
+    [/\bchủ đề\b/gi, 'lesson topic'],
     [/\bđoàn kết\b/gi, 'foster solidarity'],
     [/\bkỷ luật\b/gi, 'maintain discipline'],
     [/\btrung thực\b/gi, 'practice honesty'],
     [/\btự giác\b/gi, 'develop self-discipline'],
-    [/\bhọc tập\b/gi, 'in their learning activities'],
-    [/(?<=^|\s)để(?=\s|$)/gi, 'to'],
-    [/(?<=^|\s)và(?=\s|$)/gi, 'and'],
-    [/(?<=^|\s)không(?=\s|$)/gi, 'not']
+    [/\bhọc tập\b/gi, 'learning activities'],
+    [/\bý thức\b/gi, 'awareness'],
+    [/\bthái độ\b/gi, 'attitude'],
+    [/\bhành vi\b/gi, 'behavior']
   ];
 
   let translatedBody = result;
@@ -438,27 +483,76 @@ export function translateVietnameseIntegrationToEnglish(
     translatedBody = translatedBody.replace(pattern, repl);
   }
 
-  // Clean spaces while preserving diacritics
+  // 4. Final Sweep Pass for single Vietnamese connective words
+  const singleWordDictionary: [RegExp, string][] = [
+    [/(?:^|\s)thông\s+qua(?:\s|$)/gi, ' through '],
+    [/(?:^|\s)tình\s+huống(?:\s|$)/gi, ' situations '],
+    [/(?:^|\s)phù\s+hợp(?:\s|$)/gi, ' suitable '],
+    [/(?:^|\s)giữ(?:\s|$)/gi, ' maintain '],
+    [/(?:^|\s)vệ\s+sinh(?:\s|$)/gi, ' cleanliness '],
+    [/(?:^|\s)tiết\s+kiệm(?:\s|$)/gi, ' saving '],
+    [/(?:^|\s)tài\s+nguyên(?:\s|$)/gi, ' resources '],
+    [/(?:^|\s)hoạt\s+động(?:\s|$)/gi, ' activities '],
+    [/(?:^|\s)hướng\s+dẫn(?:\s|$)/gi, ' guided '],
+    [/(?:^|\s)tương\s+tác(?:\s|$)/gi, ' interact '],
+    [/(?:^|\s)công\s+nghệ(?:\s|$)/gi, ' technology '],
+    [/(?:^|\s)lựa\s+chọn(?:\s|$)/gi, ' select '],
+    [/(?:^|\s)sử\s+dụng(?:\s|$)/gi, ' use '],
+    [/(?:^|\s)công\s+cụ(?:\s|$)/gi, ' tools '],
+    [/(?:^|\s)luyện(?:\s|$)/gi, ' practise '],
+    [/(?:^|\s)nghe(?:\s|$)/gi, ' listening '],
+    [/(?:^|\s)phát\s+âm(?:\s|$)/gi, ' pronunciation '],
+    [/(?:^|\s)để(?:\s|$)/gi, ' to '],
+    [/(?:^|\s)và(?:\s|$)/gi, ' and '],
+    [/(?:^|\s)không(?:\s|$)/gi, ' not '],
+    [/(?:^|\s)bằng(?:\s|$)/gi, ' with '],
+    [/(?:^|\s)khi(?:\s|$)/gi, ' when '],
+    [/(?:^|\s)cho(?:\s|$)/gi, ' for '],
+    [/(?:^|\s)xả\s+rác(?:\s|$)/gi, ' littering '],
+    [/(?:^|\s)rác(?:\s|$)/gi, ' litter '],
+    [/(?:^|\s)rèn(?:\s|$)/gi, ' foster '],
+    [/(?:^|\s)rèn\s+luyện(?:\s|$)/gi, ' foster '],
+    [/(?:^|\s)tinh\s+thần(?:\s|$)/gi, ' spirit of '],
+    [/(?:^|\s)đoàn\s+kết(?:\s|$)/gi, ' cooperation '],
+    [/(?:^|\s)tham\s+gia(?:\s|$)/gi, ' participating in '],
+    [/(?:^|\s)trò\s+chơi(?:\s|$)/gi, ' games '],
+    [/(?:^|\s)tập\s+thể(?:\s|$)/gi, ' group ']
+  ];
+
+  for (const [pattern, repl] of singleWordDictionary) {
+    translatedBody = translatedBody.replace(pattern, repl);
+  }
+
+  // Clean double spaces, redundant colons, and orphan punctuation
   translatedBody = translatedBody
     .replace(/\s+/g, ' ')
+    .replace(/:\s*:/g, ':')
+    .replace(/^:\s*/, '')
+    .replace(/;\s*,/g, ',')
+    .replace(/\s+;/g, ';')
     .trim();
-
-  // If topic extracted and not present in body, attach cleanly
-  if (topicStr && !translatedBody.toLowerCase().includes(topicStr.toLowerCase())) {
-    translatedBody += ` in situations related to the lesson topic "${topicStr}"`;
-  }
-
-  // Handle unclear or short input
-  if (!translatedBody || translatedBody.length < 3) {
-    return cleanEnglishFormatting(codePrefix + "Encourage pupils to apply positive educational values in classroom activities.");
-  }
 
   let finalOutput = codePrefix + prefix + translatedBody;
 
-  // Final cleanup and formatting
-  finalOutput = cleanEnglishFormatting(finalOutput);
+  if (topicStr && !finalOutput.toLowerCase().includes(topicStr.toLowerCase())) {
+    finalOutput += ` in situations related to the lesson topic "${topicStr}"`;
+  }
 
-  return finalOutput;
+  // 5. Grammar Post-Processor: Fix awkward phrasing & duplicate prefixes
+  finalOutput = finalOutput
+    .replace(/Encourage pupils to Foster teamwork/gi, 'Foster teamwork')
+    .replace(/Encourage pupils to Raise pupils' awareness/gi, "Raise pupils' awareness")
+    .replace(/Encourage pupils to Encourage pupils to/gi, "Encourage pupils to")
+    .replace(/Encourage pupils to Select /gi, "Select ")
+    .replace(/Encourage pupils to Use /gi, "Use ")
+    .replace(/Encourage pupils to teamwork/gi, "Foster teamwork")
+    .replace(/Encourage pupils to:\s*/gi, "Encourage pupils to ")
+    .replace(/:\s*:\s*/g, ': ')
+    .replace(/:\s*through\s*/gi, ' through ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return cleanEnglishFormatting(finalOutput);
 }
 
 /**
